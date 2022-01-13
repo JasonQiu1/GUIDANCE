@@ -1,12 +1,21 @@
 #include <locale.h>
-#include <ncurses/curses.h>
-#include <ncurses/term.h>
-#include <readline/readline.h>
+#include <curses.h>
+#include <term.h>
 #include <stdio.h>
 
-#define INTERACTW_LINES 5
+#define TOP_MARG 1
+#define LEFT_MARG 1
+#define BOT_MARG 1
+#define RIGHT_MARG 1
+
+#define INFOBARW_LINES 2
+#define INTERACTW_LINES 4
+
+#define TOP_PAD 1
+#define LEFT_PAD 2
 
 WINDOW* infow = NULL;
+WINDOW* infobarw = NULL;
 WINDOW* interactw = NULL;
 
 // Initialize ncurses
@@ -20,33 +29,59 @@ void initNcurses() {
 }
 
 void doStuff() {
-    mvwprintw(infow, 0, 0, 
-              "Info window: This is the info window");
+    char userInput[80] = {0};
+
+    box(stdscr, 0, 0); 
+    wrefresh(stdscr);
+    mvwprintw(infow, 0, 0, "Info window: This is the info window");
     wrefresh(infow);
+    mvwprintw(infobarw, 0, 0,
+              "Infobar: Useful info!");
+    wrefresh(infobarw);
     mvwprintw(interactw, 0, 0,
               "Interactive window: ");
     wrefresh(interactw);
-    readline(""); 
+
+    wgetnstr(interactw, userInput, 80);
+}
+
+void cleanup() {
+    delwin(infow);
+    delwin(infobarw);
+    delwin(interactw);
+    endwin();
 }
 
 int main(int argc, char* argv[]) {
     // Set up windows
     initNcurses();
 
-    fprintf(stderr, "Terminal size: %dx%d", lines, columns);
-
     // Info window starts on top and takes up most of screen.
     // Interactive window takes up few lines at the bottom.
     infow = subwin(stdscr, 
-                   lines - INTERACTW_LINES, columns,
-                   0, 0);
+            lines - INFOBARW_LINES - INTERACTW_LINES - TOP_MARG - BOT_MARG, columns - LEFT_MARG - RIGHT_MARG, TOP_MARG, LEFT_MARG);
+    if (!infow) {
+        fprintf(stderr, "infow init\n"); 
+    }
+    infobarw = subwin(stdscr, 
+            INFOBARW_LINES, columns - LEFT_MARG - RIGHT_MARG, 
+            lines - INFOBARW_LINES - INTERACTW_LINES - BOT_MARG, LEFT_MARG);
+    if (!infobarw) {
+        fprintf(stderr, "infobarw init\n");
+    }
     interactw = subwin(stdscr,
-                       INTERACTW_LINES, columns,
-                       lines - INTERACTW_LINES, 0);
+                       INTERACTW_LINES, columns - LEFT_MARG - RIGHT_MARG,
+                       lines - INTERACTW_LINES - BOT_MARG, LEFT_MARG);
+    if (!interactw) {
+        fprintf(stderr, "interactw init\n");
+    }
 
-    doStuff();
+    fprintf(stderr, "Terminal size: %dx%d", lines, columns);
+
+    if (!ferror(stderr)) {
+        doStuff();
+    }
 
     // Cleanup windows 
-    delwin(infow);
-    endwin();
+    cleanup();
 }
