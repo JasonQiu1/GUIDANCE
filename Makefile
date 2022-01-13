@@ -1,9 +1,26 @@
-CFLAGS=-Wall -I/mingw64/include/ncurses -lncurses -g
+CC := gcc
+SOURCEDIR := .
+BUILDDIR := $(SOURCEDIR)/build
+HEADERDIR := $(SOURCEDIR)
+INCLUDEDIR := /mingw64/include/ncurses 
+BINARY := gsh
 
-build-gsh:
-	gcc main.c -o gsh $(CFLAGS) 
+LDFLAGS := -lncurses 
+CFLAGS := -Wall -g
+
+SOURCES := $(wildcard *.c)
+OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
+
+gsh: $(OBJECTS)
+	$(CC) $(OBJECTS) -o $(BINARY) $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) 
+
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c 
+	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) -I$(HEADERDIR) 
+
+clean:
+	rm $(BUILDDIR)/*
 
 run:
-	./gsh
+	./gsh 2> err
 
-.PHONY: run
+.PHONY: run clean
