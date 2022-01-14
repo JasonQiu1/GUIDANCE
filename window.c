@@ -36,6 +36,8 @@ void createWindows() {
     if (!inputw) {
         fprintf(stderr, "inputw init failed\n");
     }
+    intrflush(inputw, FALSE);
+    keypad(inputw, TRUE);
 }
 int wverase(int nmWins, ...) {
     int ret = 0;

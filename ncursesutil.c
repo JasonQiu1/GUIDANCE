@@ -7,7 +7,6 @@
 void initNcurses() {
     setlocale(LC_ALL, "");
     initscr(); cbreak(); noecho();
-    nonl();
     intrflush(stdscr, FALSE);
     keypad(stdscr, TRUE);
     refresh();

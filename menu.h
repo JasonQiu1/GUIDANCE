@@ -4,24 +4,25 @@
 #define MAX_LABEL_SIZE 80
 
 typedef struct MenuOpt MenuOpt;
+typedef struct Menu Menu;
 
-typedef struct Menu {
+struct Menu {
+    Menu* parent;
     int nmOpts;
     MenuOpt** opts;
-} Menu;
+};
 
 struct MenuOpt {
     char label[MAX_LABEL_SIZE];
-    Menu* parent;
     Menu* child; 
 }; 
 
 extern Menu* mainMenu;
 
-MenuOpt* createMenuOpt(char* label, Menu* parent, Menu* child);
+MenuOpt* createMenuOpt(char* label, Menu* child);
 
 // puts a new menu in menu
-Menu* createMenu(int nmOpts, char* labels[MAX_LABEL_SIZE]);
+Menu* createMenu(Menu* menu, int nmOpts, char* labels[MAX_LABEL_SIZE]);
 
 // prints menu with the hlChoice-th choice highlighted
 void wprintmenu(WINDOW* win, Menu* menu, int hlChoice);

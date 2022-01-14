@@ -9,47 +9,82 @@
 
 #define MAX_IN_SIZE 80
 
+void updateBar(char* str) {
+    werase(barw);
+    mvwprintw(barw, 0, 0, "Infobar: %s", str);
+    wrefresh(barw);
+}
+
 void doStuff() {
     char userInput[MAX_IN_SIZE] = {0};
     int nmChInputted = 0;
-    int inputCh;
+    int inputCh, row, col;
+    Menu* currMenu = mainMenu;
     int selectedOpt = 0;
 
     box(stdscr, 0, 0); 
-    wrefresh(stdscr);
-
-    mvwprintw(infow, 0, 0, "Info window: This is the info window");
+    mvwprintw(infow, 0, 0, "Info window: This is the info window.\nPress the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\n\nType in exit to leave.");
     mvwprintw(barw, 0, 0, "Infobar: %s", userInput);
-    wprintmenu(menuw, mainMenu, selectedOpt);
+    wprintmenu(menuw, currMenu, selectedOpt);
     mvwprintw(inputw, 0, 0, "Input window: ");
-    wvrefresh(4, infow, barw, menuw, inputw);
+    wvrefresh(5, stdscr, infow, barw, menuw, inputw);
+
     while (strncmp(userInput, "exit", 4)) {
         inputCh = wgetch(inputw);
         switch(inputCh) {
-            case KEY_UP: case KEY_DOWN:
+            case KEY_DOWN:
+                if (currMenu->parent) {
+                    currMenu = currMenu->parent;
+                    selectedOpt = 0;
+
+                    werase(menuw);
+                    wprintmenu(menuw, currMenu, selectedOpt);
+                    wrefresh(menuw);
+                }
+                break;
+            case KEY_UP:
+                if (currMenu->opts[selectedOpt]->child) {
+                    currMenu = currMenu->opts[selectedOpt]->child;
+                    selectedOpt = 0;
+
+                    werase(menuw);
+                    wprintmenu(menuw, currMenu, selectedOpt);
+                    wrefresh(menuw);
+                } else {
+                    updateBar(currMenu->opts[selectedOpt]->label);
+                }
                 break;
             case KEY_LEFT:
                 selectedOpt--;
                 if (selectedOpt < 0) selectedOpt = 0;
-                wprintmenu(menuw, mainMenu, selectedOpt);
+                wprintmenu(menuw, currMenu, selectedOpt);
                 wrefresh(menuw);
                 break;
             case KEY_RIGHT:
                 selectedOpt++;
-                if (selectedOpt >= mainMenu->nmOpts) 
-                    selectedOpt = mainMenu->nmOpts-1;
-                wprintmenu(menuw, mainMenu, selectedOpt);
+                if (selectedOpt >= currMenu->nmOpts) 
+                    selectedOpt = currMenu->nmOpts-1;
+                wprintmenu(menuw, currMenu, selectedOpt);
                 wrefresh(menuw);
                 break;
-            case KEY_ENTER:
+            case 127:
+                if (nmChInputted > 0) {
+                    nmChInputted--;
+                    getyx(inputw, row, col);
+                    wmove(inputw, row, col - 1);
+                    wdelch(inputw);
+                    wrefresh(inputw);
+                }
+                break;
+            case '\n':
                 userInput[nmChInputted++] = 0;
-
-                wverase(2, barw, inputw);
-                mvwprintw(barw, 0, 0, "Infobar: %s", userInput);
-                mvwprintw(inputw, 0, 0, "Input window: ");
-                wvrefresh(2, barw, inputw);
-
                 nmChInputted = 0;
+
+                updateBar(userInput);
+
+                werase(inputw);
+                mvwprintw(inputw, 0, 0, "Input window: ");
+                wrefresh(inputw);
                 break;
             default:
                 if (nmChInputted < MAX_IN_SIZE - 1) {
@@ -67,13 +102,28 @@ void doStuff() {
 int main(int argc, char* argv[]) {
     initNcurses();
     createWindows();
-    char* strs[MAX_LABEL_SIZE] = {"one", "two", "thr", "four"};
-    mainMenu = createMenu(4, strs);
+
+
+    char* strs[MAX_LABEL_SIZE] = {"one", "two", "three", "FOUR"};
+    mainMenu = createMenu(NULL, 4, strs);
+
+    char* strs1[MAX_LABEL_SIZE] = {"five", "six", "seven", "eight", "nine"};
+    char* strs2[MAX_LABEL_SIZE] = {"ten"};
+    char* strs3[MAX_LABEL_SIZE] = {"100", "3000", "99ree", "yo momma"};
+    char* strs4[MAX_LABEL_SIZE] = {"deez", "nuts", "in"};
+
+    mainMenu->opts[0]->child = createMenu(mainMenu, 5, strs1);
+    mainMenu->opts[1]->child = createMenu(mainMenu, 1, strs2);
+    mainMenu->opts[2]->child = createMenu(mainMenu, 4, strs3);
+    mainMenu->opts[3]->child = createMenu(mainMenu, 3, strs4);
 
     fprintf(stderr, "Terminal size: %dx%d\n", lines, columns);
 
     doStuff();
 
+    for (int i = 0; i < mainMenu->nmOpts; i++) {
+        delmenu(mainMenu->opts[i]->child);
+    }
     delmenu(mainMenu);
     cleanupWindows();
     cleanupNcurses();

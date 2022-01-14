@@ -7,20 +7,20 @@
 
 Menu* mainMenu;
 
-MenuOpt* createMenuOpt(char* label, Menu* parent, Menu* child) {
+MenuOpt* createMenuOpt(char* label, Menu* child) {
     MenuOpt* newOpt = (MenuOpt*)malloc(sizeof(MenuOpt));
     strncpy(newOpt->label, label, MAX_LABEL_SIZE);
-    newOpt->parent = parent;
     newOpt->child = child;
     return newOpt;
 }
 
-Menu* createMenu(int nmOpts, char* labels[MAX_LABEL_SIZE]) {
+Menu* createMenu(Menu* parent, int nmOpts, char* labels[MAX_LABEL_SIZE]) {
     Menu* menu = (Menu*)malloc(sizeof(Menu));
+    menu->parent = parent;
     menu->nmOpts = nmOpts;
     menu->opts = (MenuOpt**)malloc(sizeof(MenuOpt*) * nmOpts);
     for (int i = 0; i < nmOpts; i++) {
-        menu->opts[i] = createMenuOpt(labels[i], menu, NULL);
+        menu->opts[i] = createMenuOpt(labels[i], NULL);
     }
     return menu;
 }
