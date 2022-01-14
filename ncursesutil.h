@@ -5,7 +5,7 @@
 // Initialize ncurses
 void initNcurses();
 
-// Clean up windows
+// Clean up ncurses
 void cleanupNcurses();
 
 #endif
