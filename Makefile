@@ -1,8 +1,7 @@
-CC := gcc
+CC := /usr/bin/gcc
 SOURCEDIR := .
 BUILDDIR := $(SOURCEDIR)/build
 HEADERDIR := $(SOURCEDIR)
-INCLUDEDIR := /mingw64/include/ncurses 
 BINARY := gsh
 
 LDFLAGS := -lncurses 
@@ -12,10 +11,10 @@ SOURCES := $(wildcard *.c)
 OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
 
 gsh: $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(BINARY) $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) 
+	$(CC) $(OBJECTS) -o $(BINARY) $(CFLAGS) $(LDFLAGS) 
 
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.c 
-	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(INCLUDEDIR) -I$(HEADERDIR) 
+	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(HEADERDIR) 
 
 clean:
 	rm $(BUILDDIR)/*

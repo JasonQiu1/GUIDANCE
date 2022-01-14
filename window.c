@@ -5,29 +5,36 @@
 #include "window.h"
 
 WINDOW* infow = NULL;
-WINDOW* infobarw = NULL;
-WINDOW* interactw = NULL;
+WINDOW* barw = NULL;
+WINDOW* menuw = NULL;
+WINDOW* inputw = NULL;
 
 void createWindows() {
     // Info window starts on top and takes up most of screen.
     // Info bar takes a bit of the middle
-    // Interactive window takes up few lines at the bottom.
+    // Menu window takes a line in between
+    // Input window takes up few lines at the bottom.
     infow = subwin(stdscr, 
-            lines - INFOBARW_LINES - INTERACTW_LINES - TOP_MARG - BOT_MARG, columns - LEFT_MARG - RIGHT_MARG, TOP_MARG, LEFT_MARG);
+            lines - TOP_MARG - BOT_MARG - INPUTW_LINES - MENUW_LINES - MENUW_LINES, columns - LEFT_MARG - RIGHT_MARG, TOP_MARG, LEFT_MARG);
     if (!infow) {
         fprintf(stderr, "infow init failed\n"); 
     }
-    infobarw = subwin(stdscr, 
-            INFOBARW_LINES, columns - LEFT_MARG - RIGHT_MARG, 
-            lines - INFOBARW_LINES - INTERACTW_LINES - BOT_MARG, LEFT_MARG);
-    if (!infobarw) {
-        fprintf(stderr, "infobarw init failed\n");
+    barw = subwin(stdscr, 
+            BARW_LINES, columns - LEFT_MARG - RIGHT_MARG, 
+            lines - BOT_MARG - INPUTW_LINES - MENUW_LINES - BARW_LINES, LEFT_MARG);
+    if (!barw) {
+        fprintf(stderr, "barw init failed\n");
     }
-    interactw = subwin(stdscr,
-                       INTERACTW_LINES, columns - LEFT_MARG - RIGHT_MARG,
-                       lines - INTERACTW_LINES - BOT_MARG, LEFT_MARG);
-    if (!interactw) {
-        fprintf(stderr, "interactw init failed\n");
+    menuw = subwin(stdscr,
+            MENUW_LINES, columns - LEFT_MARG - RIGHT_MARG,
+            lines - BOT_MARG - INPUTW_LINES - MENUW_LINES, LEFT_MARG);
+    if (!menuw) {
+        fprintf(stderr, "menuw init failed\n");
+    }
+    inputw = subwin(stdscr, 
+            INPUTW_LINES, columns - LEFT_MARG - RIGHT_MARG, lines - INPUTW_LINES - BOT_MARG, LEFT_MARG);
+    if (!inputw) {
+        fprintf(stderr, "inputw init failed\n");
     }
 }
 int wverase(int nmWins, ...) {
@@ -64,4 +71,11 @@ int wgetninput(WINDOW* win, char* str, int num) {
     cbreak(); noecho();
 
     return ret;
+}
+
+void cleanupWindows() {
+    delwin(infow);
+    delwin(barw);
+    delwin(menuw);
+    delwin(inputw);
 }

@@ -3,41 +3,80 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "menu.h"
 #include "ncursesutil.h"
 #include "window.h"
 
-#define DEFAULT_MAX_IN_SIZE 80
+#define MAX_IN_SIZE 80
 
 void doStuff() {
-    char userInput[80] = {0};
+    char userInput[MAX_IN_SIZE] = {0};
+    int nmChInputted = 0;
+    int inputCh;
+    int selectedOpt = 0;
 
     box(stdscr, 0, 0); 
     wrefresh(stdscr);
 
-    while (strcmp(userInput, "exit")) {
-        wverase(3, infow, infobarw, interactw);
+    mvwprintw(infow, 0, 0, "Info window: This is the info window");
+    mvwprintw(barw, 0, 0, "Infobar: %s", userInput);
+    wprintmenu(menuw, mainMenu, selectedOpt);
+    mvwprintw(inputw, 0, 0, "Input window: ");
+    wvrefresh(4, infow, barw, menuw, inputw);
+    while (strncmp(userInput, "exit", 4)) {
+        inputCh = wgetch(inputw);
+        switch(inputCh) {
+            case KEY_UP: case KEY_DOWN:
+                break;
+            case KEY_LEFT:
+                selectedOpt--;
+                if (selectedOpt < 0) selectedOpt = 0;
+                wprintmenu(menuw, mainMenu, selectedOpt);
+                wrefresh(menuw);
+                break;
+            case KEY_RIGHT:
+                selectedOpt++;
+                if (selectedOpt >= mainMenu->nmOpts) 
+                    selectedOpt = mainMenu->nmOpts-1;
+                wprintmenu(menuw, mainMenu, selectedOpt);
+                wrefresh(menuw);
+                break;
+            case KEY_ENTER:
+                userInput[nmChInputted++] = 0;
 
-        mvwprintw(infow, 0, 0, "Info window: This is the info window");
-        mvwprintw(infobarw, 0, 0,
-                "Infobar: %s", userInput);
-        mvwprintw(interactw, 0, 0,
-                "Interactive window: ");
+                wverase(2, barw, inputw);
+                mvwprintw(barw, 0, 0, "Infobar: %s", userInput);
+                mvwprintw(inputw, 0, 0, "Input window: ");
+                wvrefresh(2, barw, inputw);
 
-        wvrefresh(2, infow, infobarw);
-
-        wgetinput(interactw, userInput);
+                nmChInputted = 0;
+                break;
+            default:
+                if (nmChInputted < MAX_IN_SIZE - 1) {
+                    userInput[nmChInputted++] = inputCh;
+                    waddch(inputw, inputCh);
+                    wrefresh(inputw);
+                } else {
+                    printf("\a");
+                }
+                break;
+        }
     }
 }
 
 int main(int argc, char* argv[]) {
-    // Set up windows
     initNcurses();
     createWindows();
+    char* strs[MAX_LABEL_SIZE] = {"one", "two", "thr", "four"};
+    mainMenu = createMenu(4, strs);
 
     fprintf(stderr, "Terminal size: %dx%d\n", lines, columns);
 
     doStuff();
 
-    // Cleanup windows 
-    cleanup();
+    delmenu(mainMenu);
+    cleanupWindows();
+    cleanupNcurses();
+
+    return 0;
 }

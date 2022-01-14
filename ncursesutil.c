@@ -14,9 +14,6 @@ void initNcurses() {
 }
 
 // Clean up windows
-void cleanup() {
-    delwin(infow);
-    delwin(infobarw);
-    delwin(interactw);
+void cleanupNcurses() {
     endwin();
 }

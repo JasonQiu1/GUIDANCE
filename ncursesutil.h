@@ -6,6 +6,6 @@
 void initNcurses();
 
 // Clean up windows
-void cleanup();
+void cleanupNcurses();
 
 #endif
