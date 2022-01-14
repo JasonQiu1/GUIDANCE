@@ -1,5 +1,4 @@
 #include <ncurses.h>
-#include <term.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -9,6 +8,7 @@
 
 #define MAX_IN_SIZE 80
 
+int lines = 0, columns = 0;
 Menu* mainMenu = NULL;
 
 void updateBar(char* str) {
@@ -93,7 +93,7 @@ void doStuff() {
                 wrefresh(inputw);
                 break;
             default:
-                if (nmChInputted < MAX_IN_SIZE - 1) {
+                if (inputCh >= 32 && inputCh <= 255 && nmChInputted < MAX_IN_SIZE - 1) {
                     userInput[nmChInputted++] = inputCh;
                     waddch(inputw, inputCh);
                     wrefresh(inputw);
@@ -107,11 +107,10 @@ void doStuff() {
 
 int main(int argc, char* argv[]) {
     initNcurses();
+    getmaxyx(stdscr, lines, columns);
     createWindows();
 
     mainMenu = loadMenuFromFile("./main.menu");
-
-    fprintf(stderr, "Terminal size: %dx%d\n", lines, columns);
 
     doStuff();
 
