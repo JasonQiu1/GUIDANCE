@@ -20,6 +20,6 @@ clean:
 	rm $(BUILDDIR)/*
 
 run:
-	./gsh 2> err
+	./gsh
 
 .PHONY: run clean

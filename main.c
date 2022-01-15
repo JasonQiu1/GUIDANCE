@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "log.h"
 #include "menu.h"
 #include "ncursesutil.h"
 #include "window.h"
@@ -106,9 +107,15 @@ void doStuff() {
 }
 
 int main(int argc, char* argv[]) {
+    initLog();
     initNcurses();
     getmaxyx(stdscr, lines, columns);
     createWindows();
+
+    logPrint(PROGINFO, "Started gsh.");
+    char info[128];
+    snprintf(info, 128, "Terminal size: %dx%d", lines, columns);
+    logPrint(PROGINFO, info);
 
     mainMenu = loadMenuFromFile("./main.menu");
 
