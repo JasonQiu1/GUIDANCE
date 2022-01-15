@@ -10,7 +10,6 @@
 #define MAX_IN_SIZE 80
 
 int lines = 0, columns = 0;
-Menu* mainMenu = NULL;
 
 void updateBar(char* str) {
     werase(barw);
@@ -108,6 +107,7 @@ void doStuff() {
 
 int main(int argc, char* argv[]) {
     initLog();
+    initMenu();
     initNcurses();
     getmaxyx(stdscr, lines, columns);
     createWindows();
@@ -116,8 +116,6 @@ int main(int argc, char* argv[]) {
     char info[128];
     snprintf(info, 128, "Terminal size: %dx%d", lines, columns);
     logPrint(PROGINFO, info);
-
-    mainMenu = loadMenuFromFile("./main.menu");
 
     doStuff();
 

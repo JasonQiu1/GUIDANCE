@@ -21,8 +21,10 @@ struct Menu {
     char tooltip[MAX_TOOLTIP_SIZE];
 };
 
-// Loads a full menu system from file.
-Menu* loadMenuFromFile(char* fileName);
+extern Menu* mainMenu;
+
+// Loads the main menu
+void initMenu();
 
 // Prints a menu to a window with the hlChoice-th choice highlighted.
 void wprintmenu(WINDOW* win, Menu* menu, int hlChoice);

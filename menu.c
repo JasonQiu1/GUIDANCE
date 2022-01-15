@@ -3,17 +3,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mainmenu.xxd"
 #include "menu.h"
 #include "window.h"
 
-#define STR(x) _STR(x)
-#define _STR(x) #x
+Menu* mainMenu = NULL;
 
 char* trimLeadingWhitespace(char* str) {
     char* pStr = str;
     while (*pStr == ' ') pStr++;
     return pStr;
 }
+
+#define STR(x) _STR(x)
+#define _STR(x) #x
 
 // Creates an entire menu and submenus from a file
 // format is as follow:
@@ -73,15 +76,24 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
 #undef STR
 #undef _STR
 
-Menu* loadMenuFromFile(char* fileName) {
-    FILE* fpMenu = fopen(fileName, "r");
-    if (fpMenu == NULL) {
-        fprintf(stderr, "Could not open '%s'.\n", fileName);
-        exit(-1);
-    }
-    Menu* menu = loadMenuFromFileAux(fpMenu, NULL);
-    fclose(fpMenu);
-    return menu;
+//static Menu* loadMenuFromFile(char* fileName) {
+//    FILE* fpMenu = fopen(fileName, "r");
+//    if (fpMenu == NULL) {
+//        fprintf(stderr, "Could not open '%s'.\n", fileName);
+//        exit(-1);
+//    }
+//    Menu* menu = loadMenuFromFileAux(fpMenu, NULL);
+//    fclose(fpMenu);
+//    return menu;
+//}
+
+// load main menu from variable "char* main_menu" with "int main_menu_len"
+// which is included from "mainmenu.xxd"
+void initMenu() {
+    // requires fmemopen from POSIX
+    FILE* fpmain_menu = fmemopen(main_menu, main_menu_len, "r");
+    mainMenu = loadMenuFromFileAux(fpmain_menu, NULL);
+    fclose(fpmain_menu);
 }
 
 void wprintmenu(WINDOW* win, Menu* menu, int hlChoice) {
