@@ -34,7 +34,7 @@ int initLog() {
     }
 
     strncat(logDir, "/gsh", 5);
-    if (mkdir(logDir, 0644) == -1 && errno != EEXIST) {
+    if (mkdir(logDir, 0755) == -1 && errno != EEXIST) {
         perror("mkdir"); 
         return -2;
     }
@@ -54,7 +54,7 @@ int initLog() {
     }
 
     strncat(logDir, "/gsh", 5);
-    if (mkdir(logDir, 0644) == -1 && errno != EEXIST) {
+    if (mkdir(logDir, 0755) == -1 && errno != EEXIST) {
         perror("mkdir"); 
         return -2;
     }
