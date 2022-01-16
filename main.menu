@@ -3,10 +3,10 @@ Main menu
 1 infoMain
     PLAN 2
     Plan out the day.
-    1 infoMain
+    1 infoSecondBinder
         CAND 0
         Plan out the day's schedule for your CANDIDATE.
-        1 infoPlanCand
+        1 infoPlanCand 
         GUIDE 3
         Plan out your action for the day.
         1 infoPlanGuide 
@@ -22,9 +22,12 @@ Main menu
     OBJ 0
     See all objectives, including all private ones.
     1 infoObj
-    INV 0
+    INV 1
     See and use items you possess.
     1 infoInv
+        USE 0
+        Use the item you type in.
+        1 dataUseItem
     CAND 0
     See information about your CANDIDATE.
     1 infoCand

@@ -12,7 +12,9 @@ static char progLogPath[1028];
 
 static char logLine[MAX_LOG_LINE_SIZE];
 
-// get log file locations and redirect stdout and stderr to program log file
+// create log files and redirect stdout and stderr to program log file
+// TODO: make the parent directory creation more robust, and follow
+// the description in log.h
 // returns -1 if a log folder can't be found
 // returns -2 if the gsh log folder can't be created
 // returns -3 if the log file itself can't be created or accessed

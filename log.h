@@ -1,3 +1,11 @@
+/*
+ *  Provides functions to log game and program info.
+ *  Game info gets logged to $XDG_DATA_HOME/gsh/game#/$USER/game.log or 
+ *                           $HOME/.local/share/gsh/game#/$USER/game.log
+ *  Program info goes to     $XDG_STATE_HOME/gsh/game#/prog.log or
+ *                           $HOME/.local/state/gsh/game#/prog.log
+*/
+
 #ifndef LOG_H
 #define LOG_H
 

@@ -1,14 +1,22 @@
-#include <ncurses.h>
+/*  
+ *  This is where the main function lives. 
+ *  It runs all of the init functions in the programs,
+ *  runs the input loop, and cleans up memory after the user exits.
+*/
+
+#include <ncurses.h> // extern WINDOW* stdscr
 #include <stdio.h>
 #include <string.h>
 
+#include "event.h"
 #include "log.h"
-#include "menu.h"
+#include "menu.h" // extern Menu* mainmenu
 #include "ncursesutil.h"
-#include "window.h"
+#include "window.h" // extern WINDOW* infow, barw, menuw, inputw
 
 #define MAX_IN_SIZE 80
 
+char info[1028];
 int lines = 0, columns = 0;
 
 void updateBar(char* str) {
@@ -17,19 +25,21 @@ void updateBar(char* str) {
     wrefresh(barw);
 }
 
-void doStuff() {
+void inputLoop() {
     char userInput[MAX_IN_SIZE] = {0};
     int nmChInputted = 0;
     int inputCh, row, col;
     Menu* currMenu = mainMenu;
     int selSub = 0;
+    Menu* m = NULL;
+    int eventRet = 0;
 
     box(stdscr, 0, 0); 
     mvwprintw(infow, 0, 0, "Info window: This is the info window.\nPress the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\n\nType in exit to leave.");
     updateBar(currMenu->subs[selSub]->tooltip);
     wprintmenu(menuw, currMenu, selSub);
     mvwprintw(inputw, 0, 0, "Input window: ");
-    wvrefresh(5, stdscr, infow, barw, menuw, inputw);
+    wvrefresh(4, stdscr, infow, menuw, inputw);
 
     while (strncmp(userInput, "exit", 4)) {
         inputCh = wgetch(inputw);
@@ -43,20 +53,34 @@ void doStuff() {
                     werase(menuw);
                     wprintmenu(menuw, currMenu, selSub);
                     wrefresh(menuw);
+
+                    // when event handling when going to a previous menu, don't pass any input and don't handle returns 
+                    m = currMenu;
+                    for (int i = 0; i < m->nmEvents; i++) {
+                        eventRet = handleEvent(m->events[i], "");
+                    }
                 }
                 break;
             case KEY_UP:
-                if (currMenu->subs[selSub]->nmSubs) {
-                    currMenu = currMenu->subs[selSub];
+                m = currMenu->subs[selSub];
+                for (int i = 0; i < m->nmEvents; i++) {
+                    eventRet = handleEvent(m->events[i], ((nmChInputted) ? userInput : m->label));
+                    if (eventRet == -1) {
+                        snprintf(info, 1028, "'%s' event not found!", m->events[i]);
+                        logPrint(CRITICAL, info);
+                    } else if (eventRet == 1) {
+                        handleEvent("barHl", "Invalid input, try again!");
+                    }
+                }
+
+                if (m->nmSubs) {
+                    currMenu = m;
                     selSub = 0;
                     updateBar(currMenu->subs[selSub]->tooltip);
 
                     werase(menuw);
                     wprintmenu(menuw, currMenu, selSub);
                     wrefresh(menuw);
-                } else {
-                    // ACTIVATE EVENTS -- TODO
-                    updateBar(currMenu->subs[selSub]->events[0]);
                 }
                 break;
             case KEY_LEFT:
@@ -113,11 +137,10 @@ int main(int argc, char* argv[]) {
     createWindows();
 
     logPrint(PROGINFO, "Started gsh.");
-    char info[128];
     snprintf(info, 128, "Terminal size: %dx%d", lines, columns);
     logPrint(PROGINFO, info);
 
-    doStuff();
+    inputLoop();
 
     cleanupWindows();
     cleanupNcurses();

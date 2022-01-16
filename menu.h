@@ -1,3 +1,10 @@
+/*
+ * This is the interface to the menu system. 
+ * It initializes the mainMenu, 
+ * provides functions to print the menu to an ncurses window,
+ * and a function to cleanup the menu.
+*/
+
 #ifndef MENU_H
 #define MENU_H
 

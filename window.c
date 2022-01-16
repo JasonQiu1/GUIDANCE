@@ -15,7 +15,7 @@ void createWindows() {
     // Menu window takes a line in between
     // Input window takes up few lines at the bottom.
     infow = subwin(stdscr, 
-            lines - TOP_MARG - BOT_MARG - INPUTW_LINES - MENUW_LINES - MENUW_LINES, columns - LEFT_MARG - RIGHT_MARG, TOP_MARG, LEFT_MARG);
+            lines - TOP_MARG - BOT_MARG - INPUTW_LINES - MENUW_LINES - BARW_LINES, columns - LEFT_MARG - RIGHT_MARG, TOP_MARG, LEFT_MARG);
     if (!infow) {
         fprintf(stderr, "infow init failed\n"); 
     }
