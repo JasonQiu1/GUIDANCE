@@ -50,7 +50,7 @@ void inputLoop() {
 }
 
 int main(int argc, char* argv[]) {
-    initLog();
+    if (initLog() != 0) return -1;
     initEvent();
     initNcurses();
 

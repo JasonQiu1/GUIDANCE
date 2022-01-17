@@ -1,4 +1,5 @@
 #define MAX_LOG_LINE_LEN 2048
+#define MAX_PATH_LEN 1024
 
 #include <errno.h>
 #include <stdio.h>
@@ -9,27 +10,66 @@
 
 #include "log.h"
 
+// A string to build log strings in.
 char logInfo[MAX_LOG_INFO_LEN];
 
 static char gameLogPath[MAX_LOG_LINE_LEN];
 static char progLogPath[MAX_LOG_LINE_LEN];
 static char logLine[MAX_LOG_LINE_LEN];
 
+// Return number of characters until next delimited character or null term
+static int strtoklen(char* str, const char* delim) {
+    int i, len = 0;
+    for (char* pStr = str; *pStr; pStr++, len++) {
+        for (i = 0; delim[i]; i++) {
+            if (*pStr == delim[i]) {
+                return len;
+            }
+        }
+    }
+    return len;
+}
+
+// creates all directories in a path if they don't exist
+// returns the number of directories created,
+// returns -1 if a nonexistent directory cannot be created
+static int createDirs(char* path, int permBits) {
+    char* pathSection;
+    int tokLen, offset = 1, dirsCreated = 0;
+    // for each directory in the path
+    while ((tokLen = strtoklen(path + offset, "/"))) {
+        pathSection = strndup(path, offset + tokLen);
+        // try making the directory
+        if (mkdir(pathSection, permBits) == -1 && errno != EEXIST) {
+            return -1;
+        }
+        free(pathSection);
+        dirsCreated++;
+
+        // break if at end of string
+        if (offset + tokLen + 1 == '\0') {
+            break;
+        }
+        offset += tokLen + 2; // shift offset to start of next token
+    }
+
+    return dirsCreated;
+}
+
 // create log files and redirect stdout and stderr to program log file
-// TODO: make the parent directory creation more robust, and follow
-// the description in log.h
 // returns -1 if a log folder can't be found
 // returns -2 if the gsh log folder can't be created
 // returns -3 if the log file itself can't be created or accessed
+// otherwise 0
 int initLog() {
     char logDir[MAX_LOG_LINE_LEN];
     FILE* fp = NULL;
 
     // try these directories for logs
     if (getenv("XDG_STATE_HOME")) {
-        strncpy(logDir, getenv("XDG_DATA_HOME"), 1028);
+        strncpy(logDir, getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
     } else if (getenv("HOME")) {
-        strncpy(logDir, getenv("HOME"), 1028);
+        strncpy(logDir, getenv("HOME"), MAX_PATH_LEN);
         strncat(logDir, "/.local/state", 20);
     } else {
         fprintf(stderr, "Can't find a state directory.\n");
@@ -37,19 +77,19 @@ int initLog() {
     }
 
     strncat(logDir, "/gsh", 5);
-    if (mkdir(logDir, 0755) == -1 && errno != EEXIST) {
+    if (createDirs(logDir, 0755) == -1) {
         perror("mkdir"); 
         return -2;
     }
 
-    strncpy(progLogPath, logDir, 1028);
+    strncpy(progLogPath, logDir, MAX_PATH_LEN);
     strncat(progLogPath, "/program.log", 20);
 
     // try checking these folders for a data home
     if (getenv("XDG_DATA_HOME")) {
-        strncpy(logDir, getenv("XDG_DATA_HOME"), 1028);
+        strncpy(logDir, getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
     } else if (getenv("HOME")) {
-        strncpy(logDir, getenv("HOME"), 1028);
+        strncpy(logDir, getenv("HOME"), MAX_PATH_LEN);
         strncat(logDir, "/.local/share", 20);
     } else {
         fprintf(stderr, "Can't find a data directory.\n");
@@ -57,12 +97,12 @@ int initLog() {
     }
 
     strncat(logDir, "/gsh", 5);
-    if (mkdir(logDir, 0755) == -1 && errno != EEXIST) {
+    if (createDirs(logDir, 0755) == -1) {
         perror("mkdir"); 
         return -2;
     }
 
-    strncpy(gameLogPath, logDir, 1028);
+    strncpy(gameLogPath, logDir, MAX_PATH_LEN);
     strncat(gameLogPath, "/game.log", 20);
 
     // try creating/accessing the log files
