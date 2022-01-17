@@ -1,3 +1,5 @@
+#define MAX_FILE_LINE_LEN 512
+
 #include <ncurses.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,9 +9,7 @@
 #include "menu.h"
 #include "window.h"
 
-Menu* mainMenu = NULL;
-
-char* trimLeadingWhitespace(char* str) {
+static char* trimLeadingWhitespace(char* str) {
     char* pStr = str;
     while (*pStr == ' ') pStr++;
     return pStr;
@@ -27,7 +27,7 @@ char* trimLeadingWhitespace(char* str) {
 // Submenu tooltip
 // numEvents event1 event2 event3 ...
 // ...
-static char menuLine[MAX_MENU_FILE_LINE_SIZE];
+static char menuLine[MAX_FILE_LINE_LEN];
 static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     int sumNmChConsumed;
     int nmChConsumed;
@@ -35,23 +35,23 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     menu->super = super;
 
     // Get label and number of submenus
-    if (fgets(menuLine, MAX_MENU_FILE_LINE_SIZE, fpMenu) == NULL) {
+    if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get label line");
     }
-    if (sscanf(menuLine, "%" STR(MAX_LABEL_SIZE) "s %d", menu->label, &menu->nmSubs) != 2) {
+    if (sscanf(menuLine, "%" STR(MAX_LABEL_LEN) "s %d", menu->label, &menu->nmSubs) != 2) {
         perror("extract label and numSubmenu from label line"); 
     }
     menu->subs = malloc(sizeof **menu->subs * menu->nmSubs);
 
     // Get tooltip
-    if (fgets(menuLine, MAX_MENU_FILE_LINE_SIZE, fpMenu) == NULL) {
+    if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get tooltip line");
     }
-    strncpy(menu->tooltip, trimLeadingWhitespace(menuLine), MAX_TOOLTIP_SIZE);
+    strncpy(menu->tooltip, trimLeadingWhitespace(menuLine), MAX_TOOLTIP_LEN);
 
     // Get number of events and events
     sumNmChConsumed = 0;
-    if (fgets(menuLine, MAX_MENU_FILE_LINE_SIZE, fpMenu) == NULL) {
+    if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get events line");
     }
     if (sscanf(menuLine, "%d%n", &menu->nmEvents, &nmChConsumed) != 1) {
@@ -60,7 +60,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     menu->events = malloc(sizeof *menu->events * menu->nmEvents);
     for (int i = 0; i < menu->nmEvents; i++) {
         sumNmChConsumed += nmChConsumed;
-        if (sscanf(menuLine + sumNmChConsumed, "%" STR(MAX_EVENT_NAME_SIZE) "s%n", menu->events[i], &nmChConsumed) != 1) {
+        if (sscanf(menuLine + sumNmChConsumed, "%" STR(MAX_EVENT_NAME_LEN) "s%n", menu->events[i], &nmChConsumed) != 1) {
             perror("extract an event from the events line");
         }
     }
@@ -89,11 +89,14 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
 
 // load main menu from variable "char* main_menu" with "int main_menu_len"
 // which is included from "mainmenu.xxd"
-void initMenu() {
+Menu* initMenu() {
+    Menu* mainMenu = malloc(sizeof *mainMenu);
     // requires fmemopen from POSIX
     FILE* fpmain_menu = fmemopen(main_menu, main_menu_len, "r");
     mainMenu = loadMenuFromFileAux(fpmain_menu, NULL);
     fclose(fpmain_menu);
+
+    return mainMenu;
 }
 
 void wprintmenu(WINDOW* win, Menu* menu, int hlChoice) {

@@ -1,3 +1,12 @@
+#define TOP_MARG 1
+#define LEFT_MARG 1
+#define BOT_MARG 1
+#define RIGHT_MARG 1
+
+#define BARW_LINES 3
+#define MENUW_LINES 1
+#define INPUTW_LINES 1
+
 #include <ncurses.h>
 #include <stdarg.h>
 #include <term.h>
@@ -39,6 +48,13 @@ void createWindows() {
     intrflush(inputw, FALSE);
     keypad(inputw, TRUE);
 }
+
+void wupdate(WINDOW* win, char* str) {
+    werase(win);
+    mvwprintw(win, 0, 0, "%s", str);
+    wrefresh(win);
+}
+
 int wverase(int nmWins, ...) {
     int ret = 0;
     va_list wins;
@@ -65,15 +81,15 @@ int wvrefresh(int nmWins, ...) {
     return ret;
 }
 
-int wgetninput(WINDOW* win, char* str, int num) {
-    int ret = 0;
-
-    nocbreak(); echo();
-    ret = wgetnstr(win, str, num);
-    cbreak(); noecho();
-
-    return ret;
-}
+//int wgetninput(WINDOW* win, char* str, int num) {
+//    int ret = 0;
+//
+//    nocbreak(); echo();
+//    ret = wgetnstr(win, str, num);
+//    cbreak(); noecho();
+//
+//    return ret;
+//}
 
 void cleanupWindows() {
     delwin(infow);

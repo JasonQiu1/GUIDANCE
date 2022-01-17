@@ -1,3 +1,6 @@
+#ifndef MENU_H
+#define MENU_H
+
 /*
  * This is the interface to the menu system. 
  * It initializes the mainMenu, 
@@ -5,13 +8,9 @@
  * and a function to cleanup the menu.
 */
 
-#ifndef MENU_H
-#define MENU_H
-
-#define MAX_TOOLTIP_SIZE 160
-#define MAX_LABEL_SIZE 80
-#define MAX_EVENT_NAME_SIZE 80
-#define MAX_MENU_FILE_LINE_SIZE 512
+#define MAX_TOOLTIP_LEN 160
+#define MAX_LABEL_LEN 80
+#define MAX_EVENT_NAME_LEN 80
 
 // Menus have a super menu and optionally submenus.
 // When menus are entered, they trigger all of their events.
@@ -23,16 +22,15 @@ struct Menu {
     int nmSubs;
     Menu** subs;
     int nmEvents;
-    char (*events)[MAX_EVENT_NAME_SIZE];
-    char label[MAX_LABEL_SIZE];
-    char tooltip[MAX_TOOLTIP_SIZE];
+    char (*events)[MAX_EVENT_NAME_LEN];
+    char label[MAX_LABEL_LEN];
+    char tooltip[MAX_TOOLTIP_LEN];
 };
 
-extern Menu* mainMenu;
+// Loads the main menu and returns it
+Menu* initMenu();
 
-// Loads the main menu
-void initMenu();
-
+// Tries entering the selected menu and runs all events.
 // Prints a menu to a window with the hlChoice-th choice highlighted.
 void wprintmenu(WINDOW* win, Menu* menu, int hlChoice);
 

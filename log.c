@@ -1,3 +1,5 @@
+#define MAX_LOG_LINE_LEN 2048
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,10 +9,11 @@
 
 #include "log.h"
 
-static char gameLogPath[1028];
-static char progLogPath[1028];
+char logInfo[MAX_LOG_INFO_LEN];
 
-static char logLine[MAX_LOG_LINE_SIZE];
+static char gameLogPath[MAX_LOG_LINE_LEN];
+static char progLogPath[MAX_LOG_LINE_LEN];
+static char logLine[MAX_LOG_LINE_LEN];
 
 // create log files and redirect stdout and stderr to program log file
 // TODO: make the parent directory creation more robust, and follow
@@ -19,7 +22,7 @@ static char logLine[MAX_LOG_LINE_SIZE];
 // returns -2 if the gsh log folder can't be created
 // returns -3 if the log file itself can't be created or accessed
 int initLog() {
-    char logDir[1028] = {0};
+    char logDir[MAX_LOG_LINE_LEN];
     FILE* fp = NULL;
 
     // try these directories for logs
@@ -105,7 +108,7 @@ static char* rmNl(char* str) {
 
 static time_t rawtime;
 void logPrint(LogType logType, char* str) {
-    memset(logLine, 0, MAX_LOG_LINE_SIZE);
+    memset(logLine, 0, MAX_LOG_LINE_LEN);
     if (logType == INFO) {
         printToFile(gameLogPath, str);
         printToFile(gameLogPath, "\n");
@@ -129,7 +132,7 @@ void logPrint(LogType logType, char* str) {
                 break;
         }
         strncat(logLine, "]: ", 4);
-        strncat(logLine, str, MAX_LOG_LINE_SIZE - 100);
+        strncat(logLine, str, MAX_LOG_LINE_LEN - 150);
         printToFile(progLogPath, logLine);
         printToFile(progLogPath, "\n");
     }

@@ -1,15 +1,12 @@
 #ifndef WINDOW_H
 #define WINDOW_H
+
+/*
+ *  Holds all the windows for the gsh app and functions to initialize and 
+ *  update them.
+*/
+
 #include <ncurses.h>
-
-#define TOP_MARG 1
-#define LEFT_MARG 1
-#define BOT_MARG 1
-#define RIGHT_MARG 1
-
-#define BARW_LINES 3
-#define MENUW_LINES 1
-#define INPUTW_LINES 1
 
 extern WINDOW* infow;
 extern WINDOW* barw;
@@ -18,13 +15,15 @@ extern WINDOW* inputw;
 
 void createWindows();
 
+void wupdate(WINDOW* win, char* str);
+
 int wverase(int nmWins, ...);
 
 int wvrefresh(int nmWins, ...);
 
-#define wgetinput(win, str) wgetninput(win, str, DEFAULT_MAX_IN_SIZE)
+//#define wgetinput(win, str) wgetninput(win, str, DEFAULT_MAX_IN_SIZE)
 
-int wgetninput(WINDOW* win, char* str, int num);
+//int wgetninput(WINDOW* win, char* str, int num);
 
 void cleanupWindows();
 

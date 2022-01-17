@@ -1,10 +1,11 @@
+#ifndef NCURSESUTIL_H
+#define NCURSESUTIL_H
+
 /*
  * Provides functions to initialize and cleanup ncurses windows.
 */
 
-#ifndef NCURSESUTIL_H
-#define NCURSESUTIL_H
-#include <ncurses.h>
+extern int lines, columns;
 
 // Initialize ncurses
 void initNcurses();

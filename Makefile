@@ -2,7 +2,7 @@ CC := /usr/bin/gcc
 SOURCEDIR := .
 BUILDDIR := $(SOURCEDIR)/build
 HEADERDIR := $(SOURCEDIR)
-BINARY := gsh
+BINARYNAME := gsh
 
 LDFLAGS := -lncurses 
 CFLAGS := -Wall -g
@@ -11,16 +11,16 @@ SOURCES := $(wildcard *.c)
 OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
 
 gsh: $(OBJECTS) 
-	$(CC) $(OBJECTS) -o $(BINARY) $(CFLAGS) $(LDFLAGS) 
+	$(CC) $(OBJECTS) -o $(BINARYNAME) $(CFLAGS) $(LDFLAGS) 
 
-$(BUILDDIR)/event.o: $(SOURCEDIR)/event.c $(BUILDDIR)/eventmap.h 
+$(BUILDDIR)/event.o: $(SOURCEDIR)/event.c $(SOURCEDIR)/genEventMap.sed $(BUILDDIR)/eventmap.h
 	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(HEADERDIR) -I$(BUILDDIR)
 
 $(BUILDDIR)/menu.o: $(SOURCEDIR)/menu.c $(BUILDDIR)/mainmenu.xxd
 	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(HEADERDIR) -I$(BUILDDIR)
 
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.c 
-	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(HEADERDIR) -I$(BUILDDIR)
+	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS) -I$(HEADERDIR) 
 
 $(BUILDDIR)/eventmap.h: $(SOURCEDIR)/event.c
 	sed -nf $(SOURCEDIR)/genEventMap.sed $< >| $@

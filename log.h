@@ -1,3 +1,6 @@
+#ifndef LOG_H
+#define LOG_H
+
 /*
  *  Provides functions to log game and program info.
  *  Game info gets logged to $XDG_DATA_HOME/gsh/game#/$USER/game.log or 
@@ -6,10 +9,9 @@
  *                           $HOME/.local/state/gsh/game#/prog.log
 */
 
-#ifndef LOG_H
-#define LOG_H
+#define MAX_LOG_INFO_LEN 1024
 
-#define MAX_LOG_LINE_SIZE 1024
+extern char logInfo[MAX_LOG_INFO_LEN];
 
 typedef enum LogType {
     INFO,
