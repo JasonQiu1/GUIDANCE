@@ -5,26 +5,72 @@
 
 #include "binder.h"
 
-// Separates content into multiple pages of pageChLimit-1 chars per page
-Binder* createBinder(char* content, int pageChLimit) {
-    int contentLen = strnlen(content, BINDER_CREATE_PAGE_LIMIT * pageChLimit) + 1;
+// returns the number of characters starting at str that take up a full page
+// returns -1 if makes up less than a full page (i.e. no characters left)
+static int currRow;
+static int currCol;
+static int nmChs;
+static int strseppage(char* str, int pageMaxX, int pageMaxY) {
+    currRow = currCol = nmChs = 0; 
+    for (char* pStr = str; *pStr; pStr++, nmChs++) {
+        if (*pStr == '\n' || currCol == pageMaxY) {
+            currRow++;
+            currCol = 0;
+        } else {
+            currCol++;
+        }
+
+        if (currRow == pageMaxX) {
+            return nmChs; 
+        }
+    }
+    return -1;
+}
+
+// Separates content into multiple pages if content is large enough 
+Binder* createBinder(char* content, int pageMaxX, int pageMaxY) {
+    Binder* tempBinder;
+    int pageSize, offset = 0, nextPageNmChs = strseppage(content, pageMaxX, pageMaxY);
     Binder* newBinder = malloc(sizeof *newBinder);
-    newBinder->content = malloc(sizeof *newBinder->content * ((contentLen < pageChLimit) ? contentLen : pageChLimit));
-    strncpy(newBinder->content, content, pageChLimit); 
-    newBinder->content[pageChLimit-1] = '\0';
     newBinder->prev = NULL;
     newBinder->next = NULL;
-    Binder* b = newBinder;
-    int currPos;
-    for (int pageNo = 0; pageNo < contentLen / (pageChLimit - 1); pageNo++) {
-        currPos = (pageChLimit - 1) * (pageNo + 1);
-        Binder* newPage = malloc(sizeof *newPage);
-        newPage->content = malloc(sizeof *newPage->content * (((contentLen - currPos) < pageChLimit) ? contentLen - currPos : pageChLimit));
-        strncpy(newPage->content, content+currPos, pageChLimit);
-        newPage->prev = b;
-        newPage->next = NULL;
-        b->next = newPage;
-        b = newPage;
+
+    if (nextPageNmChs == -1) {
+        pageSize = strlen(content) + 1;
+        newBinder->content = malloc(sizeof *newBinder->content * pageSize);
+        strncpy(newBinder->content, content, pageSize);
+        newBinder->content[pageSize] = '\0';
+        return newBinder;
     }
+
+    pageSize = nextPageNmChs + 1;
+    newBinder->content = malloc(sizeof *newBinder->content * pageSize);
+    strncpy(newBinder->content, content, pageSize);
+    newBinder->content[pageSize] = '\0';
+
+    offset += pageSize;
+    tempBinder = newBinder;
+    while (1) {
+        Binder* newPage = malloc(sizeof *newPage);
+        newPage->prev = NULL;
+        newPage->next = NULL;
+        tempBinder->next = newPage;
+        newPage->prev = tempBinder;
+
+        nextPageNmChs = strseppage(content + offset, pageMaxX, pageMaxY);
+        if (nextPageNmChs == -1) {
+            pageSize = strlen(content) + 1;
+            newPage->content = malloc(sizeof *newPage->content * pageSize);
+            strncpy(newPage->content, content + offset, pageSize);
+            break;
+        }
+        newPage->content = malloc(sizeof *newPage->content * nextPageNmChs + 1);
+        strncpy(newPage->content, content + offset, nextPageNmChs + 1);
+        tempBinder->content[nextPageNmChs] = '\0';
+        offset += nextPageNmChs + 1;
+
+        tempBinder = newPage;
+    }
+
     return newBinder;
 }

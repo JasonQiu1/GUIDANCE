@@ -13,6 +13,6 @@ struct Binder {
 };
 
 // Separates content into multiple pages of pageChLimit-1 chars per page
-Binder* createBinder(char* content, int pageChLimit);
+Binder* createBinder(char* content, int pageMaxX, int pageMaxY);
 
 #endif

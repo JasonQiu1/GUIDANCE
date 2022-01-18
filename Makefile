@@ -2,7 +2,7 @@ CC := /usr/bin/gcc
 SOURCEDIR := .
 BUILDDIR := $(SOURCEDIR)/build
 HEADERDIR := $(SOURCEDIR)
-BINARYNAME := gsh
+BINARYNAME := gush
 
 LDFLAGS := -lncurses 
 CFLAGS := -Wall -g
@@ -10,7 +10,7 @@ CFLAGS := -Wall -g
 SOURCES := $(wildcard *.c)
 OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.c=%.o))
 
-gsh: $(OBJECTS) 
+$(BINARYNAME): $(OBJECTS) 
 	$(CC) $(OBJECTS) -o $(BINARYNAME) $(CFLAGS) $(LDFLAGS) 
 
 $(BUILDDIR)/event.o: $(SOURCEDIR)/event.c $(SOURCEDIR)/genEventMap.sed $(BUILDDIR)/eventmap.h
@@ -32,6 +32,6 @@ clean:
 	rm $(BUILDDIR)/*
 
 run:
-	./gsh
+	./$(BINARYNAME)
 
 .PHONY: run clean

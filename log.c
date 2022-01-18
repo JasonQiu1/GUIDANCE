@@ -58,7 +58,7 @@ static int createDirs(char* path, int permBits) {
 
 // create log files and redirect stdout and stderr to program log file
 // returns -1 if a log folder can't be found
-// returns -2 if the gsh log folder can't be created
+// returns -2 if the gush log folder can't be created
 // returns -3 if the log file itself can't be created or accessed
 // otherwise 0
 int initLog() {
@@ -76,7 +76,7 @@ int initLog() {
         return -1;
     }
 
-    strncat(logDir, "/gsh", 5);
+    strncat(logDir, "/gush", 6);
     if (createDirs(logDir, 0755) == -1) {
         perror("mkdir"); 
         return -2;
@@ -96,7 +96,7 @@ int initLog() {
         return -1;
     }
 
-    strncat(logDir, "/gsh", 5);
+    strncat(logDir, "/gush", 6);
     if (createDirs(logDir, 0755) == -1) {
         perror("mkdir"); 
         return -2;

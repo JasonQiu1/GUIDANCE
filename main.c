@@ -34,10 +34,19 @@ void inputLoop() {
             case KEY_RIGHT:
                 handleEvent("pressRight");
                 break;
+            case '[':
+                handleEvent("pressOpenBracket");
+                break;
+            case ']':
+                handleEvent("pressCloseBracket");
+                break;
             case 127:
+            case KEY_DL:
+            case KEY_BACKSPACE:
                 handleEvent("pressDelete");
                 break;
             case '\n':
+            case KEY_ENTER:
                 handleEvent("pressEnter");
                 break;
             default:

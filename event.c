@@ -34,6 +34,9 @@ static Menu* currMenu = NULL;
 static int selSub = 0;
 static Binder* binder = NULL;
 
+static int infowMaxX = -1;
+static int infowMaxY = -1;
+
 static int pressUp() {
     for (int i = 0; i < currMenu->subs[selSub]->nmEvents; i++) {
         eventRet = handleEvent(currMenu->subs[selSub]->events[i]);
@@ -104,7 +107,6 @@ static int pressEnter() {
     return 0;
 }
 
-// Assume userInput is null terminated.
 // Delete, backspace, etc.
 static int row = -1, col = -1;
 static int pressDelete() {
@@ -118,21 +120,38 @@ static int pressDelete() {
     return 0;
 }
 
+// If the binder has a previous page, then flip to it and update info.
+static int pressOpenBracket() {
+    if (binder->prev) {
+        binder = binder->prev;
+        wupdate(infow, binder->content);
+    }
+    return 0;
+}
+
+// If the binder has a next page, then flip to it and update info.
+static int pressCloseBracket() {
+    if (binder->next) {
+        binder = binder->next;
+        wupdate(infow, binder->content);
+    }
+    return 0;
+}
+
 static int infoMain() {
-    werase(infow);
-    mvwprintw(infow, 0, 0, "Info window: This is the info window.\nPress the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\n\nType in exit to leave.");
-    wrefresh(infow);
+    binder = createBinder("Info window: This is the info window.\nPress the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\nHit [ and ] to flip through info pages!\n\nType in exit to leave.", infowMaxX, infowMaxY);
+    wupdate(infow, binder->content);
     return 0;
 }
 
 static int infoSecondBinder() {
-    werase(infow);
-    mvwprintw(infow, 0, 0, "This is the first page of a second info binder.");
-    wrefresh(infow);
+    binder = createBinder("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20", infowMaxX, infowMaxY);
+    wupdate(infow, binder->content);
     return 0;
 }
-
 // This is the map containing all of event names and function pointers.
+// TODO: Change this to a hashmap and handleEvent to a hashmap access func,
+// if performance becomes an issue with a lot of events.
 const static struct {
     const char* name;
     int (*funcp)();
@@ -160,6 +179,7 @@ void initEvent() {
 
 void eventBootup() {
     createWindows();
+    getmaxyx(infow, infowMaxX, infowMaxY);
 
     selSub = 0;
     box(stdscr, 0, 0); 
