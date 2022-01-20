@@ -1,14 +1,13 @@
 #define MAX_LOG_LINE_LEN 2048
-#define MAX_PATH_LEN 1024
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <time.h>
 
 #include "log.h"
+#include "pathutil.h"
+#include "strutil.h"
 
 // A string to build log strings in.
 char logInfo[MAX_LOG_INFO_LEN];
@@ -17,48 +16,9 @@ static char gameLogPath[MAX_LOG_LINE_LEN];
 static char progLogPath[MAX_LOG_LINE_LEN];
 static char logLine[MAX_LOG_LINE_LEN];
 
-// Return number of characters until next delimited character or null term
-static int strtoklen(char* str, const char* delim) {
-    int i, len = 0;
-    for (char* pStr = str; *pStr; pStr++, len++) {
-        for (i = 0; delim[i]; i++) {
-            if (*pStr == delim[i]) {
-                return len;
-            }
-        }
-    }
-    return len;
-}
-
-// creates all directories in a path if they don't exist
-// returns the number of directories created,
-// returns -1 if a nonexistent directory cannot be created
-static int createDirs(char* path, int permBits) {
-    char* pathSection;
-    int tokLen, offset = 1, dirsCreated = 0;
-    // for each directory in the path
-    while ((tokLen = strtoklen(path + offset, "/"))) {
-        pathSection = strndup(path, offset + tokLen);
-        // try making the directory
-        if (mkdir(pathSection, permBits) == -1 && errno != EEXIST) {
-            return -1;
-        }
-        free(pathSection);
-        dirsCreated++;
-
-        // break if at end of string
-        if (offset + tokLen + 1 == '\0') {
-            break;
-        }
-        offset += tokLen + 2; // shift offset to start of next token
-    }
-
-    return dirsCreated;
-}
-
 // create log files and redirect stdout and stderr to program log file
 // returns -1 if a log folder can't be found
-// returns -2 if the gush log folder can't be created
+// returns -2 if the guidance log folder can't be created
 // returns -3 if the log file itself can't be created or accessed
 // otherwise 0
 int initLog() {
@@ -76,8 +36,8 @@ int initLog() {
         return -1;
     }
 
-    strncat(logDir, "/gush", 6);
-    if (createDirs(logDir, 0755) == -1) {
+    strncat(logDir, "/guidance", 20);
+    if (mkdirs(logDir, 0755) == -1) {
         perror("mkdir"); 
         return -2;
     }
@@ -96,8 +56,8 @@ int initLog() {
         return -1;
     }
 
-    strncat(logDir, "/gush", 6);
-    if (createDirs(logDir, 0755) == -1) {
+    strncat(logDir, "/guidance", 20);
+    if (mkdirs(logDir, 0755) == -1) {
         perror("mkdir"); 
         return -2;
     }
@@ -123,40 +83,17 @@ int initLog() {
     return 0;
 }
 
-static void printToFile(char* fileName, char* str) {
-    FILE* fp = fopen(fileName, "a");
-    if (!fp) {
-        perror("Failed to open log file!");
-    }
-    fprintf(fp, str);
-    fclose(fp);
-}
-
-// append $USER to a string
-// if no $USER then nothing
-static char* appendUser(char* str) {
-    if (getenv("USER")) strncat(str, getenv("USER"), 50);
-    return str;
-}
-
-static char* rmNl(char* str) {
-    for (char* pStr = str; *pStr; pStr++) {
-        if (*pStr == '\n') *pStr = '\0';
-    }
-    return str;
-}
-
 static time_t rawtime;
-void logPrint(LogType logType, char* str) {
+void appendLog(LogType logType, char* str) {
     memset(logLine, 0, MAX_LOG_LINE_LEN);
     if (logType == INFO) {
-        printToFile(gameLogPath, str);
-        printToFile(gameLogPath, "\n");
+        appendf(gameLogPath, str);
+        appendf(gameLogPath, "\n");
     } else {
-        appendUser(logLine);
+        strcatuser(logLine);
         strncat(logLine, " (", 3);
         time(&rawtime);
-        strncat(logLine, rmNl(asctime(localtime(&rawtime))), 100);
+        strncat(logLine, strrmnl(asctime(localtime(&rawtime))), 100);
         strncat(logLine, ") [", 4);
         switch (logType) {
             case PROGINFO:
@@ -173,7 +110,7 @@ void logPrint(LogType logType, char* str) {
         }
         strncat(logLine, "]: ", 4);
         strncat(logLine, str, MAX_LOG_LINE_LEN - 150);
-        printToFile(progLogPath, logLine);
-        printToFile(progLogPath, "\n");
+        appendf(progLogPath, logLine);
+        appendf(progLogPath, "\n");
     }
 }

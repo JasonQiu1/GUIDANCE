@@ -11,7 +11,7 @@ CFLAGS := -Wall -g
 SOURCES := $(wildcard $(SOURCEDIR)/*.c)
 OBJECTS := $(addprefix $(BUILDDIR)/,$(patsubst %.c, %.o, $(SOURCES:$(SOURCEDIR)/%=%)))
 
-$(BINARYNAME): $(OBJECTS) 
+$(BINARYDIR)/$(BINARYNAME): $(OBJECTS) 
 	echo $(SOURCES)
 	echo $(OBJECTS)
 	$(CC) $(OBJECTS) -o $(BINARYNAME) $(CFLAGS) $(LDFLAGS) 
@@ -36,6 +36,6 @@ clean:
 	rm $(BUILDDIR)/*
 
 run:
-	./$(BINARYNAME)
+	$(BINARYDIR)/$(BINARYNAME)
 
 .PHONY: run clean

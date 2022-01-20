@@ -7,13 +7,8 @@
 
 #include "mainmenu.xxd"
 #include "menu.h"
+#include "strutil.h"
 #include "window.h"
-
-static char* trimLeadingWhitespace(char* str) {
-    char* pStr = str;
-    while (*pStr == ' ') pStr++;
-    return pStr;
-}
 
 #define STR(x) _STR(x)
 #define _STR(x) #x
@@ -47,7 +42,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get tooltip line");
     }
-    strncpy(menu->tooltip, trimLeadingWhitespace(menuLine), MAX_TOOLTIP_LEN);
+    strncpy(menu->tooltip, strskipspace(menuLine), MAX_TOOLTIP_LEN);
 
     // Get number of events and events
     sumNmChConsumed = 0;

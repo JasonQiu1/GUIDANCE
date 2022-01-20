@@ -26,6 +26,6 @@ typedef enum LogType {
 // returns -3 if the log file itself can't be created or accessed
 int initLog();
 
-void logPrint(LogType type, char* str);
+void appendLog(LogType type, char* str);
 
 #endif

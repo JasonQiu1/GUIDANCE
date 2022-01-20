@@ -3,7 +3,7 @@ Main menu
 1 infoMain
     PLAN 2
     Plan out the day.
-    1 infoSecondBinder
+    1 infoPlan
         CAND 0
         Plan out the day's schedule for your CANDIDATE.
         1 infoPlanCand 
@@ -12,13 +12,13 @@ Main menu
         1 infoPlanGuide 
             STALK 0
             STALK a CANDIDATE, revealing all actions they take for the day. Don't get caught!.
-            1 dataUpdateGuideActionToStalk 
+            1 dataGuideActionToStalk 
             GUARD 0
             Guard your own CANDIDATE, stopping any STALKERs after the first action.
-            1 dataUpdateGuideActionToGuard
+            1 dataGuideActionToGuard
             CAMP 0
             Camp a location on the map, revealing any actions taken by passing CANDs. Also reveals any STALKERs or GUARDs passing through.
-            1 dataUpdateGuideActionToCamp
+            1 dataGuideActionToCamp
     OBJ 0
     See all objectives, including all private ones.
     1 infoObj

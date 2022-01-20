@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "data.h"
 #include "event.h" // MAX_IN_LEN
 #include "log.h" // MAX_LOG_INFO_LEN
 #include "ncursesutil.h"
@@ -59,13 +60,14 @@ void inputLoop() {
 }
 
 int main(int argc, char* argv[]) {
-    if (initLog() != 0) return -1;
+    if ((initLog() || initData()) != 0) return -1;
+    
     initEvent();
     initNcurses();
 
-    logPrint(PROGINFO, "Started gsh.");
+    appendLog(PROGINFO, "Started gsh.");
     snprintf(logInfo, MAX_LOG_INFO_LEN, "Terminal size: %dx%d", lines, columns);
-    logPrint(PROGINFO, logInfo);
+    appendLog(PROGINFO, logInfo);
 
     inputLoop();
 

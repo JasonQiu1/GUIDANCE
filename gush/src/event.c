@@ -11,19 +11,23 @@
  *  infoX - update the info window to the "binder" named X
  *  barHl - change the infobar text to the passed value and highlight it
  *  validateX - validate the userInput against X
- *  dataX- update X in the user's data file using the input
+ *  dataXYToZ- in section X, update Y key's value to Z in user's data
 */
 
 #define MAX_IN_LEN 80
 #define INPUT_PROMPT_STR "$ "
+#define MAX_BUFFER_LEN 5120
 
 #include <ncurses.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "binder.h"
+#include "data.h"
 #include "event.h"
 #include "log.h" // extern logInfo[MAX_LOG_INFO_LEN]
 #include "menu.h"
+#include "strutil.h"
 #include "window.h" // extern WINDOW* infow, barw, menuw, inputw
 
 static char userInput[MAX_IN_LEN];
@@ -34,6 +38,8 @@ static Menu* currMenu = NULL;
 static int selSub = 0;
 static Binder* binder = NULL;
 
+static char buffer[MAX_BUFFER_LEN];
+
 static int infowMaxX = -1;
 static int infowMaxY = -1;
 
@@ -43,7 +49,7 @@ static int pressUp() {
         if (eventRet == -1) {
             snprintf(logInfo, MAX_LOG_INFO_LEN, "'%s' event not found!", 
                      currMenu->subs[selSub]->events[i]);
-            logPrint(CRITICAL, logInfo);
+            appendLog(CRITICAL, logInfo);
         } else if (eventRet == 1) {
             // TODO: update highlight bar to display a try again prompt
             //handleEvent("barHl", "Invalid userInput, try again!");
@@ -144,8 +150,20 @@ static int infoMain() {
     return 0;
 }
 
-static int infoSecondBinder() {
-    binder = createBinder("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20", infowMaxX, infowMaxY);
+// Plan info screen. Show current actions for the day.
+static int infoPlan() {
+    char* guideAction = readData(NULL, "Guide", "Action");
+    if (!guideAction) {
+        guideAction = "None.";
+    }
+    snprintf(buffer, MAX_BUFFER_LEN, 
+            "TODAY'S PLAN SO FAR:\nGUIDE Action: %s\nCAND Schedule:\n",
+            guideAction);
+    if (strncmp(guideAction, "None.", 5)) {
+        free(guideAction);
+    }
+
+    binder = createBinder(buffer, infowMaxX, infowMaxY);
     wupdate(infow, binder->content);
     return 0;
 }
@@ -159,6 +177,35 @@ const static struct {
     #include "eventmap.h" // all of the keys
 };
 
+// dataXYToZ- in section X, update Y key's value to Z in user's data
+// X, Y, and Z start with capital letters and the rest are lowercase
+static int eventUpdateData(char* eventName) {
+    char *section, *key, *value;
+    int len;
+
+    eventName += 4; // skip 'data'
+    len = strtoklen(eventName + 1, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") + 1;
+    section = malloc(sizeof *section * len + 1); // + NUL
+    strncpy(section, eventName, len);
+
+    eventName += len;
+    len = strtoklen(eventName + 1, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") + 1;
+    key = malloc(sizeof *key * len + 1); // + NUL
+    strncpy(key, eventName, len);
+
+    eventName += len + 2; // skip 'To'
+    len = strtoklen(eventName, "\0") + 1;
+    value = malloc(sizeof *value * len);
+    strncpy(value, eventName, len);
+
+    writeData(section, key, value);
+
+    free(section);
+    free(key);
+    free(value);
+    return 0;
+}
+
 // Runs the function corresponding to eventName.
 // Passes the name of the selected menu label if no input.
 // Returns -1 if the event/function cannot be found,
@@ -168,6 +215,8 @@ int handleEvent(char* eventName) {
     for (int i = 0; i < sizeof(events) / sizeof(events[0]); i++) {
         if (!strcmp(eventName, events[i].name)) {
             return (*events[i].funcp)();
+        } else if (!strncmp(eventName, "data", 4)) {
+            return eventUpdateData(eventName);
         }
     }
     return -1;
