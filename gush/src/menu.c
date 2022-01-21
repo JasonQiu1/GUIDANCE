@@ -10,9 +10,6 @@
 #include "strutil.h"
 #include "window.h"
 
-#define STR(x) _STR(x)
-#define _STR(x) #x
-
 // Creates an entire menu and submenus from a file
 // format is as follow:
 // MenuName NumSubMenus 
@@ -35,7 +32,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get label line");
     }
-    if (sscanf(menuLine, "%" STR(MAX_LABEL_LEN) "ms %d", &menu->label, &menu->nmSubs) != 2) {
+    if (sscanf(menuLine, "%ms %d", &menu->label, &menu->nmSubs) != 2) {
         perror("extract label and numSubmenu from label line"); 
     }
     menu->subs = malloc(sizeof **menu->subs * menu->nmSubs);
@@ -44,9 +41,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get tooltip line");
     }
-    menu->tooltip = malloc(sizeof *menu->tooltip *
-            strnlen(strskipspace(menuLine), MAX_TOOLTIP_LEN));
-    strncpy(menu->tooltip, strskipspace(menuLine), MAX_TOOLTIP_LEN);
+    sscanf(strskipspace(menuLine), "%m[^\n]", &menu->tooltip);
 
     // Get number of events and events
     sumNmChConsumed = 0;
@@ -59,7 +54,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     menu->events = malloc(sizeof *menu->events * menu->nmEvents);
     for (int i = 0; i < menu->nmEvents; i++) {
         sumNmChConsumed += nmChConsumed;
-        if (sscanf(menuLine + sumNmChConsumed, "%" STR(MAX_EVENT_NAME_LEN) "ms%n", &menu->events[i], &nmChConsumed) != 1) {
+        if (sscanf(menuLine + sumNmChConsumed, "%ms%n", &menu->events[i], &nmChConsumed) != 1) {
             perror("extract an event from the events line");
         }
     }
@@ -71,9 +66,6 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     
     return menu;
 }
-
-#undef STR
-#undef _STR
 
 //static Menu* loadMenuFromFile(char* fileName) {
 //    FILE* fpMenu = fopen(fileName, "r");
