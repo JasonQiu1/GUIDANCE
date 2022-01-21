@@ -22,9 +22,9 @@ struct Menu {
     int nmSubs;
     Menu** subs;
     int nmEvents;
-    char (*events)[MAX_EVENT_NAME_LEN];
-    char label[MAX_LABEL_LEN];
-    char tooltip[MAX_TOOLTIP_LEN];
+    char** events;
+    char* label;
+    char* tooltip;
 };
 
 // Loads the main menu and returns it

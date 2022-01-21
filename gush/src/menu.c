@@ -22,6 +22,8 @@
 // Submenu tooltip
 // numEvents event1 event2 event3 ...
 // ...
+
+// requires "%ms" - "m" assignment-allocation character from POSIX
 static char menuLine[MAX_FILE_LINE_LEN];
 static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     int sumNmChConsumed;
@@ -33,7 +35,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get label line");
     }
-    if (sscanf(menuLine, "%" STR(MAX_LABEL_LEN) "s %d", menu->label, &menu->nmSubs) != 2) {
+    if (sscanf(menuLine, "%" STR(MAX_LABEL_LEN) "ms %d", &menu->label, &menu->nmSubs) != 2) {
         perror("extract label and numSubmenu from label line"); 
     }
     menu->subs = malloc(sizeof **menu->subs * menu->nmSubs);
@@ -42,6 +44,8 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     if (fgets(menuLine, MAX_FILE_LINE_LEN, fpMenu) == NULL) {
         perror("get tooltip line");
     }
+    menu->tooltip = malloc(sizeof *menu->tooltip *
+            strnlen(strskipspace(menuLine), MAX_TOOLTIP_LEN));
     strncpy(menu->tooltip, strskipspace(menuLine), MAX_TOOLTIP_LEN);
 
     // Get number of events and events
@@ -55,7 +59,7 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
     menu->events = malloc(sizeof *menu->events * menu->nmEvents);
     for (int i = 0; i < menu->nmEvents; i++) {
         sumNmChConsumed += nmChConsumed;
-        if (sscanf(menuLine + sumNmChConsumed, "%" STR(MAX_EVENT_NAME_LEN) "s%n", menu->events[i], &nmChConsumed) != 1) {
+        if (sscanf(menuLine + sumNmChConsumed, "%" STR(MAX_EVENT_NAME_LEN) "ms%n", &menu->events[i], &nmChConsumed) != 1) {
             perror("extract an event from the events line");
         }
     }
@@ -85,10 +89,9 @@ static Menu* loadMenuFromFileAux(FILE* fpMenu, Menu* super) {
 // load main menu from variable "char* main_menu" with "int main_menu_len"
 // which is included from "mainmenu.xxd"
 Menu* initMenu() {
-    Menu* mainMenu = malloc(sizeof *mainMenu);
     // requires fmemopen from POSIX
     FILE* fpmain_menu = fmemopen(main_menu, main_menu_len, "r");
-    mainMenu = loadMenuFromFileAux(fpmain_menu, NULL);
+    Menu* mainMenu = loadMenuFromFileAux(fpmain_menu, NULL);
     fclose(fpmain_menu);
 
     return mainMenu;
