@@ -9,10 +9,6 @@
  *                           $HOME/.local/state/gsh/game#/prog.log
 */
 
-#define MAX_LOG_INFO_LEN 1024
-
-extern char logInfo[MAX_LOG_INFO_LEN];
-
 typedef enum LogType {
     INFO,
     PROGINFO,

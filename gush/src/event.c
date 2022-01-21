@@ -25,7 +25,7 @@
 #include "binder.h"
 #include "data.h"
 #include "event.h"
-#include "log.h" // extern logInfo[MAX_LOG_INFO_LEN]
+#include "log.h"
 #include "menu.h"
 #include "strutil.h"
 #include "window.h" // extern WINDOW* infow, barw, menuw, inputw
@@ -47,9 +47,9 @@ static int pressUp() {
     for (int i = 0; i < currMenu->subs[selSub]->nmEvents; i++) {
         eventRet = handleEvent(currMenu->subs[selSub]->events[i]);
         if (eventRet == -1) {
-            snprintf(logInfo, MAX_LOG_INFO_LEN, "'%s' event not found!", 
-                     currMenu->subs[selSub]->events[i]);
-            appendLog(CRITICAL, logInfo);
+            tmpstrprintf("'%s' event not found!", 
+                         currMenu->subs[selSub]->events[i]);
+            appendLog(CRITICAL, tmpstr);
         } else if (eventRet == 1) {
             // TODO: update highlight bar to display a try again prompt
             //handleEvent("barHl", "Invalid userInput, try again!");

@@ -7,14 +7,10 @@
 
 #include "log.h"
 #include "pathutil.h"
-#include "strutil.h"
-
-// A string to build log strings in.
-char logInfo[MAX_LOG_INFO_LEN];
+#include "strutil.h" //tmpstr, tmpstrLen
 
 static char gameLogPath[MAX_LOG_LINE_LEN];
 static char progLogPath[MAX_LOG_LINE_LEN];
-static char logLine[MAX_LOG_LINE_LEN];
 
 // create log files and redirect stdout and stderr to program log file
 // returns -1 if a log folder can't be found
@@ -22,47 +18,46 @@ static char logLine[MAX_LOG_LINE_LEN];
 // returns -3 if the log file itself can't be created or accessed
 // otherwise 0
 int initLog() {
-    char logDir[MAX_LOG_LINE_LEN];
     FILE* fp = NULL;
 
     // try these directories for logs
     if (getenv("XDG_STATE_HOME")) {
-        strncpy(logDir, getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
+        tmpstrncpy(getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
     } else if (getenv("HOME")) {
-        strncpy(logDir, getenv("HOME"), MAX_PATH_LEN);
-        strncat(logDir, "/.local/state", 20);
+        tmpstrncpy(getenv("HOME"), MAX_PATH_LEN);
+        tmpstrncat("/.local/state", 20);
     } else {
         fprintf(stderr, "Can't find a state directory.\n");
         return -1;
     }
 
-    strncat(logDir, "/guidance", 20);
-    if (mkdirs(logDir, 0755) == -1) {
+    tmpstrncat("/guidance", 20);
+    if (mkdirs(tmpstr, 0755) == -1) {
         perror("mkdir"); 
         return -2;
     }
 
-    strncpy(progLogPath, logDir, MAX_PATH_LEN);
+    strncpy(progLogPath, tmpstr, MAX_PATH_LEN);
     strncat(progLogPath, "/program.log", 20);
 
     // try checking these folders for a data home
     if (getenv("XDG_DATA_HOME")) {
-        strncpy(logDir, getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
+        tmpstrncpy(getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
     } else if (getenv("HOME")) {
-        strncpy(logDir, getenv("HOME"), MAX_PATH_LEN);
-        strncat(logDir, "/.local/share", 20);
+        tmpstrncpy(getenv("HOME"), MAX_PATH_LEN);
+        tmpstrncat("/.local/share", 20);
     } else {
         fprintf(stderr, "Can't find a data directory.\n");
         return -1;
     }
 
-    strncat(logDir, "/guidance", 20);
-    if (mkdirs(logDir, 0755) == -1) {
+    tmpstrncat("/guidance", 20);
+    if (mkdirs(tmpstr, 0755) == -1) {
         perror("mkdir"); 
         return -2;
     }
 
-    strncpy(gameLogPath, logDir, MAX_PATH_LEN);
+    strncpy(gameLogPath, tmpstr, MAX_PATH_LEN);
     strncat(gameLogPath, "/game.log", 20);
 
     // try creating/accessing the log files
@@ -84,33 +79,32 @@ int initLog() {
 }
 
 static time_t rawtime;
-void appendLog(LogType logType, char* str) {
-    memset(logLine, 0, MAX_LOG_LINE_LEN);
+void appendLog(LogType logType, char* contentStr) {
     if (logType == INFO) {
-        appendf(gameLogPath, str);
+        appendf(gameLogPath, contentStr);
         appendf(gameLogPath, "\n");
     } else {
-        strcatuser(logLine);
-        strncat(logLine, " (", 3);
+        char logLine[MAX_TMPSTR_LEN];
+        int len = 0;
+        char* userStr = getenv("USER");
         time(&rawtime);
-        strncat(logLine, strrmnl(asctime(localtime(&rawtime))), 100);
-        strncat(logLine, ") [", 4);
+        char* timeStr = strrmnl(asctime(localtime(&rawtime)));
+        char logTypeStr[20];
         switch (logType) {
             case PROGINFO:
-                strncat(logLine, "PROGINFO", 11);
+                strcpy(logTypeStr, "PROGINFO");
                 break;
             case WARNING:
-                strncat(logLine, "WARNING", 10);
+                strcpy(logTypeStr, "WARNING");
                 break;
             case CRITICAL:
-                strncat(logLine, "CRITICAL", 10);
+                strcpy(logTypeStr, "CRITICAL");
                 break;
             default:
+                strcpy(logTypeStr, "");
                 break;
         }
-        strncat(logLine, "]: ", 4);
-        strncat(logLine, str, MAX_LOG_LINE_LEN - 150);
+        safesnprintf((string){logLine, &len, MAX_TMPSTR_LEN}, "%s (%s) [%s]: %s\n", userStr, timeStr, logTypeStr, contentStr);
         appendf(progLogPath, logLine);
-        appendf(progLogPath, "\n");
     }
 }
