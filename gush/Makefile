@@ -5,8 +5,8 @@ GUSHDIR := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
 SOURCEDIR := $(GUSHDIR)/src
 BUILDDIR := $(GUSHDIR)/build
 INCLUDEDIR := $(GUSHDIR)/include 
-BINARYNAME := $(GUSHDIR)/gush
-BINARYDIR := $(GUSHDIR)/.
+BINARYDIR := $(GUSHDIR)
+BINARYNAME := gush
 
 LDFLAGS := -lncurses 
 CFLAGS := -Wall -g
