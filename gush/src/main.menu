@@ -12,7 +12,7 @@ Main menu
         1 infoPlanGuide 
             STALK 0
             STALK a CANDIDATE, revealing all actions they take for the day. Don't get caught!.
-            1 dataGuideActionToStalk 
+            2 validateCandidateName dataGuideActionToStalk 
             GUARD 0
             Guard your own CANDIDATE, stopping any STALKERs after the first action.
             1 dataGuideActionToGuard

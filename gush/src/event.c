@@ -6,10 +6,9 @@
  *      if there is text on the userInput line, then that is passed in,
  *      if empty, then the label of the pressed menu is passed instead
  *
- *  there are 5 main types of events:
+ *  there are 4 main types of events:
  *  pressKEY - do stuff when KEY is pressed.
  *  infoX - update the info window to the "binder" named X
- *  barHl - change the infobar text to the passed value and highlight it
  *  validateX - validate the userInput against X
  *  dataXYToZ- in section X, update Y key's value to Z in user's data
 */
@@ -43,6 +42,12 @@ static char buffer[MAX_BUFFER_LEN];
 static int infowMaxX = -1;
 static int infowMaxY = -1;
 
+static void barHl(char* str) {
+    wattron(barw, A_REVERSE);
+    wupdate(barw, str);
+    wattroff(barw, A_REVERSE);
+}
+
 static int pressUp() {
     for (int i = 0; i < currMenu->subs[selSub]->nmEvents; i++) {
         eventRet = handleEvent(currMenu->subs[selSub]->events[i]);
@@ -51,8 +56,9 @@ static int pressUp() {
                          currMenu->subs[selSub]->events[i]);
             appendLog(CRITICAL, tmpstr);
         } else if (eventRet == 1) {
-            // TODO: update highlight bar to display a try again prompt
-            //handleEvent("barHl", "Invalid userInput, try again!");
+            // if validation event returns 1 (not valid),
+            // then don't run rest of events
+            break;
         }
     }
 
@@ -167,6 +173,19 @@ static int infoPlan() {
     wupdate(infow, binder->content);
     return 0;
 }
+
+// validate that input is the name of a candidate
+static int validateCandidateName() {
+    if (nmInputted == 0) {
+        barHl("Invalid input! Please type in the name of a candidate."); 
+        return 1;
+    }
+
+    // TODO: make game directory structure first to find common game info
+
+    return 0;
+}
+
 // This is the map containing all of event names and function pointers.
 // TODO: Change this to a hashmap and handleEvent to a hashmap access func,
 // if performance becomes an issue with a lot of events.
