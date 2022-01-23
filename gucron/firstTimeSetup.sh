@@ -10,6 +10,7 @@ then
         echo Failed to create \'"$GUIDANCEUSER"\' user. Try rerunning the script with higher privileges.
         exit 255
     fi
+    chown guidance:guidance "$GUIDANCEHOME"
 fi
 
 GUIDANCEHOME=/home/"$GUIDANCEUSER"
@@ -21,20 +22,19 @@ fi
 
 if [ ! -d "$GUIDANCEHOME"/games ]
 then
-    mkdir "$GUIDANCEHOME"/games
+    runuser -l "$GUIDANCEUSER" -C "mkdir $GUIDANCEHOME/games"
 fi
 
-make -C "$GUSHDIR"
-if [[ -f "$GUSHDIR"/gush ]]
+if ! cp "$GUSHDIR"/gush "$GUIDANCEHOME"
 then
-    if ! cp "$GUSHDIR"/gush "$GUIDANCEHOME"
-    then
-        echo Failed to copy gush to "$GUIDANCEHOME"! Try running with higher privileges!
-        exit 253
-    fi
-else
-    echo Failed to make gush!
-    exit 252
+	echo Failed to copy gush to "$GUIDANCEHOME"! Try running with higher privileges!
+	echo or 'gush' binary not found! Please run 'make' in the gush directory first!
+	exit 253
 fi
+
+# Create skeleton directory for player users
+mkdir -p "$GUIDANCEHOME/skel/.local/state/guidance"
+mkdir -p "$GUIDANCEHOME/skel/.local/share/guidance"
+touch "$GUIDANCEHOME/skel/.local/share/guidance/data"
 
 echo Done!

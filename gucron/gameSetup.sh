@@ -2,17 +2,13 @@
 
 GUIDANCEUSER=guidance
 PLAYERUSERPREFIX=gup
-GUSHPATH="$HOME"/gush
+DEFAULTPASS=GUIDE
+GUIDANCEHOME=$(eval echo ~$GUIDANCEUSER)
+GUSHPATH="$GUIDANCEHOME"/gush
 
-# Run as guidance user!
-if [[ "$USER" != "$GUIDANCEUSER" ]]
-then
-    echo Please switch users to \'"$GUIDANCEUSER"\' before proceeding!
-fi
-
-# look through $HOME/games directory for the next game number
-GAMENUMBER=1
-for gameDir in "$HOME"/games
+# look through $GUIDANCEHOME/games directory for the next game number
+GAMENUMBER=0
+for prevGame in "$GUIDANCEHOME"/games/*
 do
     GAMENUMBER=$(( $GAMENUMBER + 1))
 done
@@ -20,10 +16,10 @@ done
 read -p "Create game number $GAMENUMBER? (Y/n): " CONFIRM
 if [[ $CONFIRM != "Y" ]]
 then
-    exit
+    exit 0
 fi
 
-while [ ! "$NUMPLAYERS" ~= "[0-9]+" ]
+while ! [[ "$NUMPLAYERS" =~ [0-9]+ ]]
 do
     read -p "How many players?: " NUMPLAYERS
 done
@@ -40,17 +36,35 @@ do
 done
 
 # Create game 
-GAMEDIR=game"$(GAMENUMBER)"
-mkdir "$GAMEDIR"
+GAMEDIR="$GUIDANCEHOME/games/game$GAMENUMBER"
+runuser -l "$GUIDANCEUSER" -c "mkdir $GAMEDIR"
 
-# Create player home directories and candidate names in them
-numUser=1
-while (( $numUser <= $NUMPLAYERS ))
+# Create player home directories and record their name with candidate name
+runuser -l "$GUIDANCEUSER" -c "touch $GAMEDIR/players"
+echo "[PlayerInfo]" >> "$GAMEDIR"/players
+
+numUser=0
+while (( $numUser < $NUMPLAYERS ))
 do
-    if grep -v "^$PLAYERUSERPREFIX$numUser" /etc/passwd
+    PLAYERUSERNAME="$PLAYERUSERPREFIX$numUser"
+
+    
+    if grep -q "^$PLAYERUSERNAME" /etc/passwd
     then
-	userdel "$PLAYERNAMEPREFIX$numUser"
+        userdel "$PLAYERUSERNAME"
     fi
-    useradd -s "$GUSHPATH" -b "$GAMEDIR" -m "$PLAYERUSERPREFIX$numUser"
+    useradd -s "$GUSHPATH" -k "$GUIDANCEHOME/skel" -b "$GAMEDIR" -m -g "$GUIDANCEUSER" "$PLAYERUSERNAME"
+    echo "$PLAYERUSERNAME:$DEFAULTPASS" | chpasswd
+    passwd -e "$PLAYERUSERNAME"
+
+    # Update player data with candidate info
+    echo "$PLAYERUSERNAME = ${names[$numUser]}" >> "$GAMEDIR"/players
+
+    PLAYERDATAFILE="$GAMEDIR/$PLAYERUSERNAME/.local/share/guidance/data"
+    echo "[CAND]" >> "$PLAYERDATAFILE"
+    echo "Name = ${names[$numUser]}" >> "$PLAYERDATAFILE"
+
+    numUser=$(( $numUser + 1 ))
 done
 
+echo Done!

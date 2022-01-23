@@ -14,7 +14,7 @@ CFLAGS := -Wall -g
 SOURCES := $(wildcard $(SOURCEDIR)/*.c)
 OBJECTS := $(addprefix $(BUILDDIR)/,$(patsubst %.c, %.o, $(SOURCES:$(SOURCEDIR)/%=%)))
 
-$(BINARYDIR)/$(BINARYNAME): $(OBJECTS) 
+$(BINARYDIR)/$(BINARYNAME): $(BUILDDIR) $(OBJECTS) 
 	echo $(SOURCES)
 	echo $(OBJECTS)
 	$(CC) $(OBJECTS) -o $(BINARYNAME) $(CFLAGS) $(LDFLAGS) 
@@ -39,8 +39,8 @@ $(BUILDDIR)/mainmenu.xxd: $(SOURCEDIR)/main.menu
 	xxd -i $< | sed -e 's/\([0-9a-f]\)$$/\1, 0x00/' -e "$(addprefix $(addprefix s/, $(XXDPREFIX)), \(.*\)/\1/)" >| $@
 
 clean:
-	@rm $(wildcard $(BUILDDIR)/*) || true
-	@rm $(BINARYDIR)/$(BINARYNAME) || true
+	@rm -r $(BUILDDIR) || true > /dev/null 2>&1
+	@rm $(BINARYDIR)/$(BINARYNAME) || true >/dev/null 2>&1
 
 run:
 	$(BINARYDIR)/$(BINARYNAME)
