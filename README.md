@@ -1,6 +1,6 @@
 # GUIDANCE
 
-A multiplayer turn-based terminal daily planning game. 
+A multiplayer turn-based daily-planning terminal game. 
 
 Play with your friends as GUIDEs, planning out your CANDIDATEs' schedules each day to be the first one whose CANDIDATE finishes the main quest!
 

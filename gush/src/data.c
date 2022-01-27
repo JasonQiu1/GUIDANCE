@@ -1,4 +1,4 @@
-#define MAX_FILE_LINE_LEN 2048
+#define MAXPATH 2048
 
 #include <limits.h>
 #include <stdio.h>
@@ -9,22 +9,23 @@
 #include "log.h"
 #include "pathutil.h"
 #include "strutil.h"
+#include "tomlc.h"
 
-static char dataPath[MAX_PATH_LEN] = {0};
-static char tempDataPath[MAX_PATH_LEN];
-static FILE* fp;
+static char dataPath[MAXPATH] = {0};
+static char tempDataPath[MAXPATH];
 
 // Checks for data file and initializes temporary data buffer file.
 // dataPath: $XDG_DATA_HOME/guidance/data or $HOME/.local/share/guidance/data
 // tempDataPath: $XDG_DATA_HOME/guidance/day or $HOME/.local/share/guidance/day
 int initData() {
-    char dataDir[MAX_PATH_LEN];
+    char dataDir[MAXPATH];
+    FILE* fp;
 
     // try checking these folders for a data home
     if (getenv("XDG_DATA_HOME")) {
-        strncpy(dataDir, getenv("XDG_DATA_HOME"), MAX_PATH_LEN);
+        strncpy(dataDir, getenv("XDG_DATA_HOME"), MAXPATH);
     } else if (getenv("HOME")) {
-        strncpy(dataDir, getenv("HOME"), MAX_PATH_LEN);
+        strncpy(dataDir, getenv("HOME"), MAXPATH);
         strncat(dataDir, "/.local/share", 20);
     } else {
         fprintf(stderr, "Can't find a data directory.\n");
@@ -37,14 +38,14 @@ int initData() {
         return -2;
     }
 
-    strncpy(dataPath, dataDir, MAX_PATH_LEN);
+    strncpy(dataPath, dataDir, MAXPATH);
     strncat(dataPath, "/data", 6);
     if (!pathExists(dataPath)) {
         fprintf(stderr, "Data file not found.\n");
         return -2;
     }
 
-    strncpy(tempDataPath, dataDir, MAX_PATH_LEN);
+    strncpy(tempDataPath, dataDir, MAXPATH);
     strncat(tempDataPath, "/day", 5);
 
     // try creating/accessing the temp data buffer
@@ -58,94 +59,59 @@ int initData() {
     return 0; 
 }
 
-// Seeks out the line after a matching TOML section
-// Returns -1 if section not found, 0 otherwise
-static int fseekAfterSection(FILE* fp, char* section) {
-    char dataLine[MAX_FILE_LINE_LEN];
-    int sectionLen = strlen(section);
-    do {
-        if (!fgets(dataLine, MAX_FILE_LINE_LEN, fp)) return -1;
-    } while(strncmp(dataLine + 1, section, sectionLen));
-    return 0;
-}
-
-// Seeks out the line containing the given key
-// Returns -1 if the key is not found, 0 otherwise
-static int fseekKey(FILE* fp, char* key) {
-    char dataLine[MAX_FILE_LINE_LEN];
-    fpos_t pos;
-    int keyLen = strlen(key);
-    while (!fgetpos(fp, &pos) && fgets(dataLine, MAX_FILE_LINE_LEN, fp)) {
-        if (!strncmp(dataLine + 4, key, keyLen)) {
-            fsetpos(fp, &pos);
-            return 0;
-        }
-    }
-    return -1;
-}
-
-// Reads a user's data (TOML). TODO: read data file if can't find in temp
+// Reads a user's data (TOML).
+// Reads in this order if not found: tempDataFile -> dataFile -> gameDataFile
 // If userName is NULL, then use the player's username.
 // returns NULL if any problems occur
-char* readData(char* userName, char* section, char* key) {
-    char userDataPath[MAX_PATH_LEN];
-    char dataLine[MAX_FILE_LINE_LEN];
-    int keyLen = strlen(key);
-    int valueLen;
-    char* pValue;
+char* readData(char* userName, char* header, char* key) {
+    char* userHomePath;
+    char* query;
     char* value;
 
-    strncpy(userDataPath, getenv("HOME"), MAX_PATH_LEN);
-    if (userName) {
-        strncpy(userDataPath + strtoklen(userDataPath + 1, "/")+2, userName, MAX_PATH_LEN);
+    tmpstrprintf("%s.%s", header, key);
+    query = strdup(tmpstr);
+
+    if (!userName) {
+        tmpstrncpy(getenv("HOME"), MAXPATH);
+    } else {
+        tmpstrncpy(getenv("GAMEHOME"), MAXPATH);
+        tmpstrncat(userName, MAXPATH);
     }
-    strncat(userDataPath, "/.local/share/guidance/day", 100);
+    userHomePath = strdup(tmpstr);
 
-    if (!(fp = fopen(userDataPath, "r"))) {
-        perror("fopen user data");
-        return NULL;
+    tmpstrncat("/.local/share/guidance/day", MAXPATH);
+    if (!(value = readValueTOML(tmpstr, query))) {
+        tmpstrncpy(userHomePath, MAXPATH);
+        tmpstrncat("/.local/share/guidance/data", MAXPATH);
+        if (!(value = readValueTOML(tmpstr, query))) {
+            if (!getenv("GAMEHOME")) {
+                free(query);
+                free(userHomePath);
+                return NULL;
+            }
+            tmpstrncpy(getenv("GAMEHOME"), MAXPATH);
+            tmpstrncat("/gamedata", MAXPATH);
+            if (!(value = readValueTOML(tmpstr, query))) {
+                free(query);
+                free(userHomePath);
+                return NULL;
+            }
+        }
     }
 
-    // search for section
-    if (fseekAfterSection(fp, section) == -1) {
-        return NULL; 
-    }
-
-    // find key value pair
-    do {
-        fgets(dataLine, MAX_FILE_LINE_LEN, fp);
-        pValue = strskipspace(dataLine);
-    } while (*dataLine && strncmp(pValue, key, keyLen));
-
-    // extract value
-    pValue = pValue + strtoklen(pValue, " ") + 1;
-    valueLen = strlen(pValue) + 1; //incl NUL
-    value = malloc(sizeof *value * valueLen);
-    strncpy(value, pValue, valueLen);
-
-    fclose(fp);
+    free(query);
+    free(userHomePath);
     return value;
 }
 
 // Writes to a temporary buffer for the day. (TOML)
 // Gucron will deal with updating the actual data files.
-int writeData(char* section, char* key, char* value) {
-    // open file
-    if (!(fp = fopen(tempDataPath, "w"))) {
-        fprintf(stderr, "Cannot open temp data file!\n");
-        return INT_MIN;    
-    }
-   
-    // append new section to end of file if doesn't exist 
-    if (fseekAfterSection(fp, section) == -1) {
-        fprintf(fp, "[%s]\n", section);
+// Returns 1 if successful, 0 otherwise.
+int writeData(char* header, char* key, char* value) {
+    tmpstrprintf("%s.%s", header, key);
+    if (!writeValueTOML(tempDataPath, tmpstr, value)) {
+        return 0;    
     }
 
-    // if key value pair exists, then update it,
-    // otherwise, make it
-    fseekKey(fp, key);
-    fprintf(fp, "    %s %s", key, value); 
-
-    fclose(fp);
-    return 0;
+    return 1;
 }
