@@ -250,3 +250,12 @@ strVector* readKeysTOML(char* filename, char* header) {
     fclose(fp);
     return keys;
 }
+
+void delStrVector(strVector* vec) {
+    if (!vec) return;
+    for (int i = 0; i < vec->len; i++) {
+        free(vec->strs[i]);
+    }
+    free(vec->strs);
+    free(vec);
+}

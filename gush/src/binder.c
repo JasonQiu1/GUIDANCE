@@ -74,3 +74,27 @@ Binder* createBinder(char* content, int pageMaxX, int pageMaxY) {
 
     return newBinder;
 }
+
+// Frees a binder.
+void delBinder(Binder* binder) {
+    if (!binder) return;
+
+    // flip to second-left-most page
+    while (binder->prev && binder->prev->prev) {
+        binder = binder->prev;
+    }
+    if (!binder->prev && binder->next) binder = binder->next;
+
+    // free previous page and flip right until nothing left
+    while (binder->prev && binder->next) {
+        free(binder->prev->content);
+        free(binder->prev);
+        binder = binder->next;
+    }
+    if (binder->prev) {
+        free(binder->prev->content);
+        free(binder->prev);
+    }
+    free(binder->content);
+    free(binder);
+}

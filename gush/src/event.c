@@ -37,6 +37,9 @@ static Menu* currMenu = NULL;
 static int selSub = 0;
 static Binder* binder = NULL;
 
+static strVector* candNames = NULL;
+static char lastSuccValid[MAX_IN_LEN] = {0};
+
 static char buffer[MAX_BUFFER_LEN];
 
 static int infowMaxX = -1;
@@ -151,6 +154,7 @@ static int pressCloseBracket() {
 }
 
 static int infoMain() {
+    delBinder(binder);
     binder = createBinder("Info window: This is the info window.\nPress the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\nHit [ and ] to flip through info pages!\n\nType in exit to leave.", infowMaxX, infowMaxY);
     wupdate(infow, binder->content);
     return 0;
@@ -169,8 +173,15 @@ static int infoPlan() {
         free(guideAction);
     }
 
+    delBinder(binder);
     binder = createBinder(buffer, infowMaxX, infowMaxY);
     wupdate(infow, binder->content);
+    return 0;
+}
+
+// clear lastSuccValidate
+static int validateClear() {
+    lastSuccValid[0] = 0;
     return 0;
 }
 
@@ -178,12 +189,17 @@ static int infoPlan() {
 static int validateCandidateName() {
     if (nmInputted == 0) {
         barHl("Invalid input! Please type in the name of a candidate."); 
-        return 1;
+    } else {
+        for (int i = 0; i < candNames->len; i++) {
+            if (!strncmp(candNames->strs[i], userInput, MAX_IN_LEN)) {
+                strncpy(lastSuccValid, userInput, MAX_IN_LEN - 1);
+                userInput[MAX_IN_LEN-1] = 0;
+                return 0;
+            }
+        }
     }
 
-    // TODO: make game directory structure first to find common game info
-
-    return 0;
+    return 1;
 }
 
 // This is the map containing all of event names and function pointers.
@@ -198,6 +214,8 @@ const static struct {
 
 // dataXYToZ- in section X, update Y key's value to Z in user's data
 // X, Y, and Z start with capital letters and the rest are lowercase
+// The last successfully validated input is also appended on to Z,
+// so add a validateClear event before if you don't want that to happen.
 static int eventUpdateData(char* eventName) {
     char *section, *key, *value;
     int len;
@@ -214,8 +232,10 @@ static int eventUpdateData(char* eventName) {
 
     eventName += len + 2; // skip 'To'
     len = strtoklen(eventName, "\0") + 1;
-    value = malloc(sizeof *value * len);
+
+    value = malloc(sizeof *value * (len + MAX_IN_LEN));
     strncpy(value, eventName, len);
+    strncat(value, lastSuccValid, MAX_IN_LEN);
 
     writeData(section, key, value);
 
@@ -243,6 +263,7 @@ int handleEvent(char* eventName) {
 
 void initEvent() {
     currMenu = initMenu();
+    candNames = getCandidateNames();
 }
 
 void eventBootup() {

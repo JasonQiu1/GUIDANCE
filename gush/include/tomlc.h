@@ -28,4 +28,7 @@ int writeValueTOML(char* filename, char* key, char* value);
 // Returns NULL if the table header cannot be found.
 strVector* readKeysTOML(char* filename, char* header);
 
+// Frees a string vector.
+void delStrVector(strVector* vec);
+
 #endif

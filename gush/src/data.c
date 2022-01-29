@@ -11,7 +11,8 @@
 #include "strutil.h"
 #include "tomlc.h"
 
-static char dataPath[MAXPATH] = {0};
+static char gameDataPath[MAXPATH];
+static char dataPath[MAXPATH];
 static char tempDataPath[MAXPATH];
 
 // Checks for data file and initializes temporary data buffer file.
@@ -35,6 +36,14 @@ int initData() {
     strncat(dataDir, "/guidance", 20);
     if (mkdirs(dataDir, 0755) == -1) {
         perror("mkdir"); 
+        return -2;
+    }
+
+    if (getenv("GAMEHOME")) {
+        strncpy(gameDataPath, getenv("GAMEHOME"), MAXPATH);
+        strncat(gameDataPath, "/gamedata", 20);
+    } else {
+        fprintf(stderr, "Game data not found.\n");
         return -2;
     }
 
@@ -84,14 +93,7 @@ char* readData(char* userName, char* header, char* key) {
         tmpstrncpy(userHomePath, MAXPATH);
         tmpstrncat("/.local/share/guidance/data", MAXPATH);
         if (!(value = readValueTOML(tmpstr, query))) {
-            if (!getenv("GAMEHOME")) {
-                free(query);
-                free(userHomePath);
-                return NULL;
-            }
-            tmpstrncpy(getenv("GAMEHOME"), MAXPATH);
-            tmpstrncat("/gamedata", MAXPATH);
-            if (!(value = readValueTOML(tmpstr, query))) {
+            if (!(value = readValueTOML(gameDataPath, query))) {
                 free(query);
                 free(userHomePath);
                 return NULL;
@@ -114,4 +116,14 @@ int writeData(char* header, char* key, char* value) {
     }
 
     return 1;
+}
+
+strVector* getCandidateNames() {
+   strVector* playerNames = readKeysTOML(gameDataPath, "Players");
+   // replace player names with their corresponding candidates
+   for (int i = 0; i < playerNames->len; i++) {
+       tmpstrprintf("Players.%s", playerNames->strs[i]);
+       playerNames->strs[i] = readValueTOML(gameDataPath, tmpstr);
+   }
+   return playerNames;
 }
