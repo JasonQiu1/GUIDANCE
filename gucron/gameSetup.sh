@@ -7,11 +7,7 @@ GUIDANCEHOME=$(eval echo ~$GUIDANCEUSER)
 GUSHPATH="$GUIDANCEHOME"/gush
 
 # look through $GUIDANCEHOME/games directory for the next game number
-GAMENUMBER=0
-for prevGame in "$GUIDANCEHOME"/games/*
-do
-    GAMENUMBER=$(( $GAMENUMBER + 1))
-done
+GAMENUMBER=$(ls -l "$GUIDANCEHOME"/games | wc -l)
 
 read -p "Create game number $GAMENUMBER? (Y/n): " CONFIRM
 if [[ $CONFIRM != "Y" ]]
@@ -40,14 +36,15 @@ GAMEDIR="$GUIDANCEHOME/games/game$GAMENUMBER"
 runuser -l "$GUIDANCEUSER" -c "mkdir $GAMEDIR"
 
 # Create player home directories and record their name with candidate name
-runuser -l "$GUIDANCEUSER" -c "touch $GAMEDIR/players"
-echo "[PlayerInfo]" >> "$GAMEDIR"/players
+runuser -l "$GUIDANCEUSER" -c "touch $GAMEDIR/gamedata"
+echo "day = '1'" >> "$GAMEDIR"/gamedata
+echo "weather = 'clear'" >> "$GAMEDIR"/gamedata
+echo "[Players]" >> "$GAMEDIR"/gamedata
 
 numUser=0
 while (( $numUser < $NUMPLAYERS ))
 do
     PLAYERUSERNAME="$PLAYERUSERPREFIX$numUser"
-
     
     if grep -q "^$PLAYERUSERNAME" /etc/passwd
     then
@@ -58,11 +55,15 @@ do
     passwd -e "$PLAYERUSERNAME"
 
     # Update player data with candidate info
-    echo "$PLAYERUSERNAME = ${names[$numUser]}" >> "$GAMEDIR"/players
+    echo "$PLAYERUSERNAME = '${names[$numUser]}'" >> "$GAMEDIR"/gamedata
 
     PLAYERDATAFILE="$GAMEDIR/$PLAYERUSERNAME/.local/share/guidance/data"
-    echo "[CAND]" >> "$PLAYERDATAFILE"
-    echo "Name = ${names[$numUser]}" >> "$PLAYERDATAFILE"
+    echo "[Candidate]" >> "$PLAYERDATAFILE"
+    echo "Name = '${names[$numUser]}'" >> "$PLAYERDATAFILE"
+
+    # Add $GAMEHOME environment variable on login
+    mkdir $GAMEDIR/$PLAYERUSERNAME/.ssh
+    echo "GAMEHOME=$GAMEDIR" >> "$GAMEDIR/$PLAYERUSERNAME/.ssh/environment"
 
     numUser=$(( $numUser + 1 ))
 done

@@ -84,6 +84,7 @@ char* readData(char* userName, char* header, char* key) {
         tmpstrncpy(getenv("HOME"), MAXPATH);
     } else {
         tmpstrncpy(getenv("GAMEHOME"), MAXPATH);
+        tmpstrncat("/", 5);
         tmpstrncat(userName, MAXPATH);
     }
     userHomePath = strdup(tmpstr);

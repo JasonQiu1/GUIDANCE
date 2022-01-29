@@ -65,7 +65,7 @@ static int fseekNextKey(FILE* fp) {
         if (fgetpos(fp, &pos) || !fgets(line, MAXFILELINE, fp) || line[0] == '[') {
             return 0;
         }
-    } while (line[0] != '#' && line[0] != '\0');
+    } while (line[0] == '#' || line[0] == '\0');
     fsetpos(fp, &pos);
     return 1;
 }
@@ -146,7 +146,7 @@ int writeValueTOML(char* filename, char* key, char* value) {
     FILE* fpTemp;
     int keyLen, nextTokenLen, keyFound;
     char* nextToken;
-    long endPos, pos;
+    long endPos, afterHeaderPos = 0, keyPos = 0;
     char* bakFilename;
 
     // Open original data file for reading.
@@ -178,9 +178,9 @@ int writeValueTOML(char* filename, char* key, char* value) {
         
         // append new table header to end of temp file if not found
         if (!fseekAfterHeader(fpOriginal, nextToken)) {
-            pos = ftell(fpOriginal);        
+            afterHeaderPos = ftell(fpOriginal);        
             fseek(fpOriginal, 0, SEEK_SET);
-            filencpy(fpTemp, fpOriginal, pos);
+            filencpy(fpTemp, fpOriginal, afterHeaderPos);
             fprintf(fpTemp, "[%s]\n", nextToken);
         }
         free(nextToken);
@@ -190,9 +190,9 @@ int writeValueTOML(char* filename, char* key, char* value) {
     // - end of section if not found or
     // - at the old key value pair, overwriting it
     keyFound = fseekKey(fpOriginal, key);
-    pos = ftell(fpOriginal);        
-    fseek(fpOriginal, ftell(fpTemp), SEEK_SET);
-    filencpy(fpTemp, fpOriginal, pos - ftell(fpTemp));
+    keyPos = ftell(fpOriginal);        
+    fseek(fpOriginal, afterHeaderPos, SEEK_SET);
+    filencpy(fpTemp, fpOriginal, keyPos - afterHeaderPos);
     fprintf(fpTemp, "%s = \'%s\'\n", key, value);
 
     // Write rest of original file
@@ -206,7 +206,9 @@ int writeValueTOML(char* filename, char* key, char* value) {
 
     // append '.bak' to original file name
     // rename temp file to original file name
-    bakFilename = strcat(strdup(filename), ".bak");
+    bakFilename = malloc((strlen(filename) + strlen(".bak") + 1) * sizeof *bakFilename);
+    strcpy(bakFilename, filename);
+    strcat(bakFilename, ".bak");
     rename(filename, bakFilename);
     free(bakFilename);
     rename(tempName, filename);
@@ -214,16 +216,27 @@ int writeValueTOML(char* filename, char* key, char* value) {
     return 1;
 }
 
+void delStrVector(strVector* vec) {
+    if (!vec) return;
+    for (int i = 0; i < vec->len; i++) {
+        free(vec->strs[i]);
+    }
+    free(vec->strs);
+    free(vec);
+}
+
 // Returns all of the keys in a table in the file. 
 // Returns NULL if the table header cannot be found.
 strVector* readKeysTOML(char* filename, char* header) {
+    strVector* temp;
     strVector* keys = malloc(sizeof *keys);
-    keys->max = 1;
+    keys->max = 4;
     keys->len = 0;
     keys->strs = malloc(keys->max * sizeof *keys->strs);
 
     FILE* fp = fopen(filename, "r");
     if (!fp) {
+        fprintf(stderr, "Failed to open '%s'.", filename);
         perror("tomlc.c:readKeysTOML:fopen");
         return NULL;
     }
@@ -238,10 +251,18 @@ strVector* readKeysTOML(char* filename, char* header) {
         line[strtoklen(line, "=") - 1] = '\0';
         if (keys->len >= keys->max) {
             keys->max *= 2;
-            if (!(keys = realloc(keys, keys->max))) {
+            if (!(temp = realloc(keys, keys->max))) {
                 fclose(fp);
                 perror("tomlc.c:readKeysTOML:realloc");
                 return NULL;
+            } else {
+                temp->max = keys->max;
+                temp->len = keys->len;
+                for (int i = 0; i < keys->len; i++) {
+                    temp->strs[i] = strdup(keys->strs[i]);
+                }
+                delStrVector(keys);
+                keys = temp;
             }
         }
         sscanf(line, "%ms", &keys->strs[keys->len++]);
@@ -249,13 +270,4 @@ strVector* readKeysTOML(char* filename, char* header) {
 
     fclose(fp);
     return keys;
-}
-
-void delStrVector(strVector* vec) {
-    if (!vec) return;
-    for (int i = 0; i < vec->len; i++) {
-        free(vec->strs[i]);
-    }
-    free(vec->strs);
-    free(vec);
 }

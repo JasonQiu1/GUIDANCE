@@ -187,9 +187,7 @@ static int validateClear() {
 
 // validate that input is the name of a candidate
 static int validateCandidateName() {
-    if (nmInputted == 0) {
-        barHl("Invalid input! Please type in the name of a candidate."); 
-    } else {
+    if (nmInputted) {
         for (int i = 0; i < candNames->len; i++) {
             if (!strncmp(candNames->strs[i], userInput, MAX_IN_LEN)) {
                 strncpy(lastSuccValid, userInput, MAX_IN_LEN - 1);
@@ -199,6 +197,7 @@ static int validateCandidateName() {
         }
     }
 
+    barHl("Invalid input! Please type in the name of a candidate."); 
     return 1;
 }
 
