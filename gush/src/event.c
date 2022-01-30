@@ -37,10 +37,9 @@ static Menu* currMenu = NULL;
 static int selSub = 0;
 static Binder* binder = NULL;
 
+static char* playerCandName = NULL;
 static strVector* candNames = NULL;
 static char lastSuccValid[MAX_IN_LEN] = {0};
-
-static char buffer[MAX_BUFFER_LEN];
 
 static int infowMaxX = -1;
 static int infowMaxY = -1;
@@ -155,7 +154,8 @@ static int pressCloseBracket() {
 
 static int infoMain() {
     delBinder(binder);
-    binder = createBinder("Info window: This is the info window.\nPress the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\nHit [ and ] to flip through info pages!\n\nType in exit to leave.", infowMaxX, infowMaxY);
+    tmpstrprintf("Press the left and right arrow keys to move around the menu.\nPress the up arrow key to press the selected menu option, and hit the down key to go back to the previous menu.\nType in stuff and hit enter for it to pop up in the info box.\nHit [ and ] to flip through info pages!\n\nType in exit to leave.\n\nYOUR CAND: %s.", playerCandName);
+    binder = createBinder(tmpstr, infowMaxX, infowMaxY);
     wupdate(infow, binder->content);
     return 0;
 }
@@ -166,15 +166,27 @@ static int infoPlan() {
     if (!guideAction) {
         guideAction = "None.";
     }
-    snprintf(buffer, MAX_BUFFER_LEN, 
-            "TODAY'S PLAN SO FAR:\nGUIDE Action: %s\nCAND Schedule:\n",
+    tmpstrprintf("TODAY'S PLAN SO FAR:\nGUIDE Action: %s\nCAND Schedule:\n",
             guideAction);
     if (strncmp(guideAction, "None.", 5)) {
         free(guideAction);
     }
 
     delBinder(binder);
-    binder = createBinder(buffer, infowMaxX, infowMaxY);
+    binder = createBinder(tmpstr, infowMaxX, infowMaxY);
+    wupdate(infow, binder->content);
+    return 0;
+}
+
+static int infoCands() {
+    tmpstrprintf("CANDS:\n");
+    for (int i = 0; i < candNames->len; i++) {
+        tmpstrncat(candNames->strs[i], 80);
+        tmpstrncat("\n", 80);
+    }
+
+    delBinder(binder);
+    binder = createBinder(tmpstr, infowMaxX, infowMaxY);
     wupdate(infow, binder->content);
     return 0;
 }
@@ -263,6 +275,7 @@ int handleEvent(char* eventName) {
 void initEvent() {
     currMenu = initMenu();
     candNames = getCandidateNames();
+    playerCandName = readData(NULL, "Players", getenv("USER"));
 }
 
 void eventBootup() {

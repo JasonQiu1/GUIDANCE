@@ -9,7 +9,7 @@ Main menu
         1 infoPlanCand 
         GUIDE 3
         Plan out your action for the day.
-        1 infoPlanGuide 
+        1 infoCands
             STALK 0
             STALK a CANDIDATE, revealing all actions they take for the day. Don't get caught!.
             2 validateCandidateName dataGuideActionToStalk 
